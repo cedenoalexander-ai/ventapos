@@ -95,7 +95,7 @@
         </button>
       </div>
     </div>
-    
+     
     <!-- Pestañas de navegación -->
     <nav class="flex gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 text-xs font-normal w-full md:w-auto">
       <button onclick="cambiarVista('vender')" id="btnNavVender" class="px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">
@@ -103,6 +103,9 @@
       </button>
       <button onclick="cambiarVista('ventas')" id="btnNavVentas" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
         🧾 Ventas
+      </button>
+      <button onclick="cambiarVista('cobranza')" id="btnNavCobranza" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
+      💰 Cobranza
       </button>
       <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
         👥 Clientes
@@ -260,45 +263,76 @@
     </div>
 
     <!-- Filtros -->
-    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-2 items-center justify-between">
-      <input type="text" id="filtroTextoVentas" 
-             placeholder="🔍 Buscar por ticket #0000001, cliente, vendedor..." 
-             oninput="filtrarVentas()" 
-             class="w-full sm:w-1/2 border border-gray-300 p-2.5 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
-      
-      <div class="flex gap-2 w-full sm:w-auto">
-        <select id="filtroTipoVenta" onchange="filtrarVentas()" class="border border-gray-300 p-2 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 outline-none flex-1">
-          <option value="todos">Todos los pagos</option>
-          <option value="Contado">Solo Contado</option>
-          <option value="Crédito">Solo Crédito</option>
-        </select>
-        <button onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
-          🔄 Actualizar
-        </button>
+    <!-- Filtros con Rango de Fechas -->
+    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2.5">
+      <div class="flex flex-col lg:flex-row gap-2 items-center justify-between">
+        
+        <!-- Buscador texto (Ticket, cliente, vendedor, referencia de pago) -->
+        <div class="w-full lg:w-1/3">
+          <input type="text" id="filtroTextoVentas" 
+                 placeholder="🔍 Buscar por ticket #, cliente, vendedor, ref..." 
+                 oninput="filtrarVentas()" 
+                 class="w-full border border-gray-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <!-- Controles de Fecha Desde / Hasta y Tipo de Venta -->
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
+          
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label for="filtroFechaInicio" class="text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
+            <input type="date" id="filtroFechaInicio" onchange="filtrarVentas()" 
+                   class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label for="filtroFechaFin" class="text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
+            <input type="date" id="filtroFechaFin" onchange="filtrarVentas()" 
+                   class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+
+          <select id="filtroTipoVenta" onchange="filtrarVentas()" 
+                  class="border border-gray-300 p-1.5 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="todos">Todos los pagos</option>
+            <option value="Contado">Solo Contado</option>
+            <option value="Crédito">Solo Crédito</option>
+          </select>
+
+          <button type="button" onclick="limpiarFiltroFechas()" title="Limpiar rango de fechas" 
+                  class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">
+            🧹
+          </button>
+
+          <button type="button" onclick="cargarDatos()" 
+                  class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+            🔄 Actualizar
+          </button>
+        </div>
+
       </div>
-    </div>
+     </div>
 
     <!-- Tabla Ventas -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="bg-gray-100 text-gray-600 uppercase border-b">
+           <thead>
+            <tr class="bg-gray-100 text-gray-600 uppercase border-b text-[11px]">
               <th class="p-3 font-bold">Ticket #</th>
               <th class="p-3 font-bold">Fecha</th>
               <th class="p-3 font-bold">Cliente</th>
               <th class="p-3 font-bold">Vendedor</th>
               <th class="p-3 font-bold text-center">Tipo</th>
+              <th class="p-3 font-bold">Desglose de Pago</th>
               <th class="p-3 font-bold text-right">USD</th>
               <th class="p-3 font-bold text-right">Bs.</th>
               <th class="p-3 font-bold text-center">Acción</th>
             </tr>
           </thead>
-          <tbody id="tablaVentasBody" class="divide-y divide-gray-100"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+           <tbody id="tablaVentasBody" class="divide-y divide-gray-100"></tbody>
+           </table>
+           </div>
+           </div>
+           </div>
 
   <!-- 5. PANTALLA: PRODUCTOS (SOLO ADMIN) -->
   <div id="vistaProductos" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full">
@@ -455,6 +489,80 @@
       <div id="listaEdicionUsuarios" class="flex flex-col gap-2 overflow-y-auto flex-1"></div>
     </div>
   </div>
+    <!-- PANTALLA: CUENTAS POR COBRAR -->
+<div id="vistaCobranza" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 max-w-7xl mx-auto w-full">
+  <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
+    <div class="flex justify-between items-center border-b pb-3 mb-3">
+      <h2 class="text-base sm:text-lg font-bold text-gray-800">💰 Cuentas por Cobrar (Créditos)</h2>
+      <button onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition">🔄 Actualizar</button>
+    </div>
+    
+    <input type="text" id="filtroCobranza" placeholder="🔍 Buscar por cliente o ticket..." oninput="renderTablaCobranza()" class="w-full border p-2 rounded-lg mb-3 text-xs">
+    
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="bg-gray-100 text-gray-600 uppercase border-b text-[11px]">
+            <th class="p-3 font-bold">Ticket #</th>
+            <th class="p-3 font-bold">Fecha</th>
+            <th class="p-3 font-bold">Cliente</th>
+            <th class="p-3 font-bold text-right">Deuda (USD)</th>
+            <th class="p-3 font-bold text-center">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tablaCobranzaBody" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARA REGISTRAR ABONO -->
+<!-- MODAL PARA REGISTRAR ABONO -->
+<div id="modalAbono" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-gray-200">
+    <div class="flex justify-between items-start border-b pb-2 mb-3">
+      <h3 class="font-black text-lg text-gray-900">💵 Registrar Abono</h3>
+      <button type="button" onclick="cerrarModalAbono()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none cursor-pointer">&times;</button>
+    </div>
+    
+    <form onsubmit="guardarAbono(event)" class="flex flex-col gap-3">
+      <input type="hidden" id="abonoIdVenta">
+      
+      <!-- Deuda Restante en USD y Bs -->
+      <div class="bg-blue-50 p-2 rounded-lg border border-blue-200 text-center mb-1">
+        <span class="text-[10px] text-blue-600 font-bold uppercase">Deuda Restante:</span>
+        <div class="text-sm font-black text-blue-800">
+          <span id="abonoDeudaUSD">$0.00</span> / <span id="abonoDeudaBS" class="text-gray-600">0.00 Bs</span>
+        </div>
+      </div>
+
+      <!-- Selector de Moneda y Monto -->
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Moneda:</label>
+          <select id="abonoMoneda" class="w-full border p-2.5 rounded-lg text-xs font-bold bg-white" onchange="cambiarMonedaAbono()">
+            <option value="USD">Dólares ($)</option>
+            <option value="BS">Bolívares (Bs)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1" id="labelMontoTitulo">Monto USD ($):</label>
+          <input type="number" step="0.01" min="0.01" id="abonoMontoIngresado" required placeholder="Ej: 10.00" class="w-full border p-2.5 rounded-lg text-xs font-bold">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Método y Referencia:</label>
+        <input type="text" id="abonoReferencia" required placeholder="Ej: Pago Móvil - Ref 1234" class="w-full border p-2.5 rounded-lg text-xs">
+      </div>
+
+      <div class="flex gap-2 mt-2">
+        <button type="button" onclick="cerrarModalAbono()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 rounded-lg text-xs transition cursor-pointer">Cancelar</button>
+        <button type="submit" id="btnSubmitAbono" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs shadow transition cursor-pointer">💾 Procesar Abono</button>
+      </div>
+    </form>
+  </div>
+</div>
 
   <!-- 8. MODAL DE CÁMARA PARA ESCANEAR CÓDIGOS DE BARRA -->
   <div id="modalEscanerCamara" class="hidden fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -628,7 +736,7 @@
   <!-- 11. SCRIPT DE CONTROL Y FUNCIONAMIENTO                   -->
   <!-- ======================================================== -->
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7lUHU8ydMZGZs7q85BKANpxzTNQZnuG88hviW3WkTA1HkPwCz_h00q14eArEdZ1vC/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMJbzcun83VxOSfBGy5Qy7GT8iPo7M-gU6rUMMnW87yJQln5adUipG6bkoZuQ2ou-b/exec";
 
     let usuarioActual = null;
     let clienteSeleccionadoVenta = null;
@@ -640,12 +748,190 @@
     let ventasFiltradas = [];
     let carrito = [];
     let pagosCobro = [];
+    let dbAbonos = [];
     let tasaBCVActual = 50.00;
+    let deudaAbonoActualUSD = 0;
     let html5QrCodeScanner = null;
-
+    
     let modoEdicionProd = false;
     let modoEdicionCli = false;
     let modoEdicionUser = false;
+  
+    // Obtener abonos en el frontend desde el objeto devuelto por getDatos
+    
+
+   function renderTablaCobranza() {
+  const tbody = document.getElementById("tablaCobranzaBody");
+  const filtro = document.getElementById("filtroCobranza").value.toLowerCase();
+  
+  // 1. Corrección de mayúscula a minúscula en la propiedad 'tipo'
+  let creditos = dbVentas.filter(v => v.tipo === "Crédito");
+
+  if(filtro) {
+    creditos = creditos.filter(c => 
+      c.idVenta.toLowerCase().includes(filtro) || 
+      // 2. Corrección de la propiedad 'Cliente' a 'clienteNombre'
+      (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro))
+    );
+  }
+
+  function calcularDeudaPendiente(idVenta, totalUSD) {
+    const abonosVenta = dbAbonos.filter(a => a.idVenta === idVenta);
+    const totalAbonado = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD), 0);
+    return Math.max(0, totalUSD - totalAbonado);
+  }
+
+  tbody.innerHTML = creditos.map(venta => {
+    // 3. Uso de la función calcularDeudaPendiente con la propiedad 'totalUSD' en minúscula
+    const deudaRestante = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
+
+    if (deudaRestante <= 0) return ''; // Ocultar si ya pagó todo
+
+    return `
+      <tr class="hover:bg-gray-50 border-b">
+        <td class="p-3 font-bold text-gray-800">${venta.idVenta}</td>
+        <!-- 4. Corrección de 'Fecha' a 'fecha' -->
+        <td class="p-3">${formatearFechaLatina(venta.fecha)}</td>
+        <!-- 5. Corrección de 'Cliente' a 'clienteNombre' -->
+        <td class="p-3 font-bold">${venta.clienteNombre}</td>
+        <td class="p-3 text-right font-black text-red-600">$${deudaRestante.toFixed(2)}</td>
+        <td class="p-3 text-center">
+          <button onclick="abrirModalAbono('${venta.idVenta}', ${deudaRestante})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg shadow font-bold text-[10px] cursor-pointer">
+            ➕ Abonar
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+}
+
+// pendinete
+function cambiarMonedaAbono() {
+  const moneda = document.getElementById("abonoMoneda").value;
+  const labelTitulo = document.getElementById("labelMontoTitulo");
+  const inputMonto = document.getElementById("abonoMontoIngresado");
+  
+  if (moneda === "BS") {
+    // Calculamos el límite máximo en Bolívares
+    const deudaBS = deudaAbonoActualUSD * tasaBCVActual;
+    labelTitulo.textContent = "Monto Bs (Bs):";
+    inputMonto.max = deudaBS.toFixed(2); // ✅ Ahora el límite en Bs es 1797.07
+    inputMonto.placeholder = "Ej: " + deudaBS.toFixed(2);
+  } else {
+    // Límite máximo en Dólares
+    labelTitulo.textContent = "Monto USD ($):";
+    inputMonto.max = deudaAbonoActualUSD.toFixed(2); // ✅ Límite en USD 2.27
+    inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
+  }
+}
+
+
+function abrirModalAbono(idVenta, deudaRestante) {
+  // 1. Guardamos el ID de la venta y la deuda en USD
+  document.getElementById("abonoIdVenta").value = idVenta;
+  deudaAbonoActualUSD = Number(deudaRestante);
+
+  // 2. Calculamos la deuda en Bolívares usando la tasa BCV actual
+  const deudaRestanteBS = deudaAbonoActualUSD * tasaBCVActual;
+
+  // 3. Mostramos ambos valores en las etiquetas del modal
+  document.getElementById("abonoDeudaUSD").innerText = "$" + deudaAbonoActualUSD.toFixed(2);
+  document.getElementById("abonoDeudaBS").innerText = deudaRestanteBS.toFixed(2) + " Bs";
+
+  // 4. Reseteamos los campos de entrada dejando por defecto Dólares
+  document.getElementById("abonoMoneda").value = "USD";
+  document.getElementById("labelMontoTitulo").textContent = "Monto USD ($):";
+  
+  const inputMonto = document.getElementById("abonoMontoIngresado");
+  inputMonto.value = "";
+  inputMonto.max = deudaAbonoActualUSD.toFixed(2); // Límite en USD
+  inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
+
+  document.getElementById("abonoReferencia").value = "";
+
+  // 5. Mostramos la ventana modal
+  document.getElementById("modalAbono").classList.remove("hidden");
+}
+
+
+
+function cerrarModalAbono() {
+  document.getElementById("modalAbono").classList.add("hidden");
+}
+
+
+async function guardarAbono(e) {
+  e.preventDefault();
+  const btn = document.getElementById("btnSubmitAbono");
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Guardando...";
+
+  // 1. Leemos el monto ingresado y la moneda seleccionada
+  const montoIngresado = parseFloat(document.getElementById("abonoMontoIngresado").value);
+  const monedaSeleccionada = document.getElementById("abonoMoneda").value;
+
+  // 2. Calculamos el monto en USD para enviarlo siempre estandarizado al servidor
+  let montoFinalUSD = montoIngresado;
+  if (monedaSeleccionada === "BS") {
+    montoFinalUSD = montoIngresado / tasaBCVActual;
+  }
+
+  const payload = {
+    action: "registrarAbono",
+    abono: {
+      idVenta: document.getElementById("abonoIdVenta").value,
+      montoUSD: montoFinalUSD, // Enviamos el valor ya convertido a dólares
+      referencia: document.getElementById("abonoReferencia").value,
+      usuario: usuarioActual.nombre
+    }
+  };
+
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    
+    if (result.error) {
+      alert("Error: " + result.error);
+    } else {
+      alert("¡Abono registrado con éxito!");
+      cerrarModalAbono();
+      await cargarDatos(); // Esto refrescará automáticamente la tabla gracias al cambio anterior
+    }
+  } catch (error) {
+    console.error("Error al guardar el abono:", error);
+    alert("Hubo un error de conexión.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "💾 Procesar Abono";
+  }
+}
+    
+    // Función para asegurar formato Latinoamericano (DD/MM/AAAA hh:mm a.m./p.m.)
+function formatearFechaLatina(fechaOriginal) {
+  if (!fechaOriginal || fechaOriginal === "N/A") return "N/A";
+  
+  // Si ya viene con formato dd/mm/yyyy
+  if (typeof fechaOriginal === "string" && /^\d{2}\/\d{2}\/\d{4}/.test(fechaOriginal)) {
+    return fechaOriginal;
+  }
+  
+  const d = new Date(fechaOriginal);
+  if (isNaN(d.getTime())) return fechaOriginal.toString();
+  
+  return d.toLocaleString('es-VE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
 
     // Beep de escaneo
     function reproducirBeep() {
@@ -840,11 +1126,12 @@
       document.getElementById('vistaProductos').classList.add('hidden');
       document.getElementById('vistaClientes').classList.add('hidden');
       document.getElementById('vistaUsuarios').classList.add('hidden');
+      document.getElementById('vistaCobranza').classList.add('hidden');
 
-      ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios'].forEach(id => {
-        const b = document.getElementById(id);
-        if (b) b.className = 'px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
-      });
+       ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios', 'btnNavCobranza'].forEach(id => {
+       const b = document.getElementById(id);
+       if (b) b.className = 'px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
+       });
 
       if (vista === 'vender') {
         document.getElementById('vistaVender').classList.remove('hidden');
@@ -863,8 +1150,13 @@
       } else if (vista === 'usuarios') {
         document.getElementById('vistaUsuarios').classList.remove('hidden');
         document.getElementById('btnNavUsuarios').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+       
+      } else if (vista === 'cobranza') { // NUEVA CONDICIONAL
+         document.getElementById('vistaCobranza').classList.remove('hidden');
+         document.getElementById('btnNavCobranza').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+         renderTablaCobranza();
+       }
       }
-    }
 
     function formatearBS(monto) {
       return new Intl.NumberFormat('es-VE', { 
@@ -873,7 +1165,45 @@
         minimumFractionDigits: 2 
       }).format(monto || 0).replace("VES", "Bs.");
     }
+     // Función para formatear fechas en formato Latinoamericano (DD/MM/AAAA)
+    function formatearFechaLatina(fechaOriginal) {
+      if (!fechaOriginal || fechaOriginal === "N/A") return "N/A";
+      if (typeof fechaOriginal === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}/.test(fechaOriginal)) {
+        return fechaOriginal;
+      }
+      const d = parsearFechaVenta(fechaOriginal);
+      if (!d) return fechaOriginal.toString();
+      return d.toLocaleString('es-VE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    }
 
+    // Función para convertir texto de fecha a objeto Date
+    function parsearFechaVenta(fechaStr) {
+      if (!fechaStr) return null;
+      const partesLatina = fechaStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (partesLatina) {
+        const dia = parseInt(partesLatina[1], 10);
+        const mes = parseInt(partesLatina[2], 10) - 1;
+        const anio = parseInt(partesLatina[3], 10);
+        return new Date(anio, mes, dia);
+      }
+      const partesISO = fechaStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (partesISO) {
+        const anio = parseInt(partesISO[1], 10);
+        const mes = parseInt(partesISO[2], 10) - 1;
+        const dia = parseInt(partesISO[3], 10);
+        return new Date(anio, mes, dia);
+      }
+      const d = new Date(fechaStr);
+      return isNaN(d.getTime()) ? null : d;
+    }
     async function cargarDatos() {
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getDatos`, { method: "GET" });
@@ -884,6 +1214,8 @@
         dbClientes = data.clientes || [];
         dbUsuarios = data.usuarios || [];
         dbVentas = (data.ventas || []).reverse();
+        dbAbonos = data.abonos || [];
+
         
         if (data.tasaBCV && data.tasaBCV.tasa) {
           tasaBCVActual = Number(data.tasaBCV.tasa);
@@ -902,6 +1234,7 @@
         renderTablasGestionClientes();
         renderTablasGestionUsuarios();
         renderTablasGestionVentas();
+        renderTablaCobranza()
         actualizarLabelProximoTicket();
       } catch (err) {
         console.warn("Cargando datos locales:", err);
@@ -1463,9 +1796,15 @@
     }
 
     // IMPRESIÓN
-    function imprimirTicket(venta) {
+    
+
+    // ==========================================
+// IMPRESIÓN DE TICKET CON DESGLOSE DE PAGO
+// ==========================================
+ 
+function imprimirTicket(venta) {
       document.getElementById("tTktNumero").innerText = venta.idVenta || "N/A";
-      document.getElementById("tTktFecha").innerText = venta.fecha || new Date().toLocaleString();
+      document.getElementById("tTktFecha").innerText = formatearFechaLatina(venta.fecha || new Date());
       document.getElementById("tTktVendedor").innerText = venta.vendedor || "Desconocido";
       document.getElementById("tTktCliente").innerText = venta.clienteNombre || "Cliente General";
       document.getElementById("tTktTipo").innerText = venta.tipo || "Contado";
@@ -1488,6 +1827,18 @@
         itemsHtml = `<tr><td colspan="2">${venta.detalle || 'Detalle de venta'}</td></tr>`;
       }
 
+      // Desglose de pago en el ticket impreso
+      if (venta.desglosePago && venta.desglosePago.trim() !== "") {
+        itemsHtml += `
+          <tr>
+            <td colspan="2" style="border-top: 1px dashed #000; padding-top: 4px; padding-bottom: 2px; font-size: 8px; color: #111;">
+              <strong>Formas de Pago:</strong><br>
+              ${venta.desglosePago}
+            </td>
+          </tr>
+        `;
+      }
+
       document.getElementById("tTktItemsBody").innerHTML = itemsHtml;
       const container = document.getElementById("ticketTermicoContainer");
       container.classList.remove("hidden");
@@ -1495,7 +1846,7 @@
       container.classList.add("hidden");
     }
 
-    function imprimirTicketPorId(idVenta) {
+     function imprimirTicketPorId(idVenta) {
       const venta = dbVentas.find(v => v.idVenta.toString() === idVenta.toString());
       if (!venta) return alert("Venta no encontrada.");
       imprimirTicket(venta);
@@ -1514,54 +1865,104 @@
       const cantContado = ventasFiltradas.filter(v => v.tipo === 'Contado').length;
       const cantCredito = ventasFiltradas.filter(v => v.tipo === 'Crédito').length;
 
-      document.getElementById("resumenCantVentas").innerText = dbVentas.length;
+      document.getElementById("resumenCantVentas").innerText = ventasFiltradas.length;
       document.getElementById("resumenTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
       document.getElementById("resumenTotalBS").innerText = formatearBS(totalBS);
       document.getElementById("resumenContado").innerText = `Contado: ${cantContado}`;
       document.getElementById("resumenCredito").innerText = `Crédito: ${cantCredito}`;
 
       if (ventasFiltradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-gray-400">No hay ventas registradas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400">No hay ventas en este rango o búsqueda</td></tr>';
         return;
       }
 
-      tbody.innerHTML = ventasFiltradas.map(v => `
-        <tr class="hover:bg-blue-50 border-b">
-          <td class="p-2.5 font-mono font-bold text-blue-700">${v.idVenta}</td>
-          <td class="p-2.5 text-gray-600 text-[11px]">${v.fecha || 'N/A'}</td>
-          <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
-          <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
-          <td class="p-2.5 text-center">
-            <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-              ${v.tipo}
-            </span>
-          </td>
-          <td class="p-2.5 text-right font-bold text-gray-900">$${Number(v.totalUSD).toFixed(2)}</td>
-          <td class="p-2.5 text-right font-bold text-emerald-700">${formatearBS(v.totalBS)}</td>
-          <td class="p-2.5 text-center">
-            <button onclick="imprimirTicketPorId('${v.idVenta}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer">
-              🖨️
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = ventasFiltradas.map(v => {
+        // Formato visual para el desglose de pago
+        let desgloseHtml = '<span class="text-gray-400 italic text-[10px]">Sin desglose</span>';
+        if (v.desglosePago && v.desglosePago.trim() !== "") {
+          const metodos = v.desglosePago.split('|');
+          desgloseHtml = `<div class="flex flex-col gap-1 max-w-xs">` + 
+            metodos.map(m => `
+              <span class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-medium inline-block">
+                💳 ${m.trim()}
+              </span>
+            `).join('') + 
+          `</div>`;
+        } else if (v.tipo === "Crédito") {
+          desgloseHtml = `<span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold">Pendiente por cobrar</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-blue-50 border-b">
+            <td class="p-2.5 font-mono font-bold text-blue-700">${v.idVenta}</td>
+            <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+            <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
+            <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
+            <td class="p-2.5 text-center">
+              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                ${v.tipo}
+              </span>
+            </td>
+            <td class="p-2.5">${desgloseHtml}</td>
+            <td class="p-2.5 text-right font-bold text-gray-900">$${Number(v.totalUSD).toFixed(2)}</td>
+            <td class="p-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">${formatearBS(v.totalBS)}</td>
+            <td class="p-2.5 text-center">
+              <button onclick="imprimirTicketPorId('${v.idVenta}')" title="Reimprimir Ticket" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer shadow">
+                🖨️
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function filtrarVentas() {
       const texto = (document.getElementById("filtroTextoVentas").value || "").toLowerCase().trim();
       const tipo = document.getElementById("filtroTipoVenta").value;
+      const fechaInicioVal = document.getElementById("filtroFechaInicio").value;
+      const fechaFinVal = document.getElementById("filtroFechaFin").value;
+
+      let fechaInicio = null;
+      let fechaFin = null;
+
+      if (fechaInicioVal) {
+        const [a, m, d] = fechaInicioVal.split("-").map(Number);
+        fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
+      }
+
+      if (fechaFinVal) {
+        const [a, m, d] = fechaFinVal.split("-").map(Number);
+        fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
+      }
 
       ventasFiltradas = dbVentas.filter(v => {
         const cumpleTipo = (tipo === "todos") || (v.tipo && v.tipo.toLowerCase() === tipo.toLowerCase());
         const cumpleTexto = !texto || 
           (v.idVenta || "").toLowerCase().includes(texto) ||
           (v.clienteNombre || "").toLowerCase().includes(texto) ||
-          (v.vendedor || "").toLowerCase().includes(texto);
-        return cumpleTipo && cumpleTexto;
+          (v.vendedor || "").toLowerCase().includes(texto) ||
+          (v.desglosePago || "").toLowerCase().includes(texto);
+
+        let cumpleFecha = true;
+        if (fechaInicio || fechaFin) {
+          const fechaVentaObj = parsearFechaVenta(v.fecha);
+          if (fechaVentaObj) {
+            if (fechaInicio && fechaVentaObj < fechaInicio) cumpleFecha = false;
+            if (fechaFin && fechaVentaObj > fechaFin) cumpleFecha = false;
+          }
+        }
+
+        return cumpleTipo && cumpleTexto && cumpleFecha;
       });
 
       renderTablasGestionVentas();
     }
+
+     function limpiarFiltroFechas() {
+      document.getElementById("filtroFechaInicio").value = "";
+      document.getElementById("filtroFechaFin").value = "";
+      filtrarVentas();
+     }
 
     // CLIENTES & USUARIOS CRUD
     async function guardarCliente(e) {
@@ -1677,6 +2078,7 @@
       document.getElementById("userNombreInput").value = "";
       document.getElementById("userPasswordInput").value = "";
     }
+    
 
     // Inicializar al cargar
     comprobarSesionExistente();
