@@ -3,44 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>iMtec POS - Sistema de Ventas</title>
+  <title>iMtec POS - Sistema de Ventas y Cobranzas</title>
   
-  <!-- METADATOS PARA INSTALACIÓN EN MÓVILES (PWA / PANTALLA COMPLETA) -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="iMtec POS">
-  <meta name="application-name" content="iMtec POS">
   <meta name="theme-color" content="#2563eb">
 
-  <!-- Ícono de la aplicación -->
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3144/3144456.png">
 
-  <!-- Estilos visuales con Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Librería para escanear códigos de barras con la cámara -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   
   <style>
     * { -webkit-tap-highlight-color: transparent; }
-    
-    /* Configuración para imprimir ticket térmico (80mm o 58mm) */
     @media print {
       body * { visibility: hidden !important; }
       #ticketTermicoContainer, #ticketTermicoContainer * { visibility: visible !important; }
       #ticketTermicoContainer {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 72mm;
-        font-family: 'Courier New', Courier, monospace;
-        font-size: 11px;
-        color: #000;
-        background: white;
-        padding: 2mm;
-        margin: 0;
+        position: absolute; left: 0; top: 0; width: 72mm;
+        font-family: 'Courier New', Courier, monospace; font-size: 11px;
+        color: #000; background: white; padding: 2mm; margin: 0;
       }
       @page { size: 80mm auto; margin: 0; }
     }
@@ -48,7 +33,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col font-sans">
 
-  <!-- 1. VENTANA DE INICIO DE SESIÓN (LOGIN) -->
+  <!-- 1. LOGIN -->
   <div id="modalLogin" class="fixed inset-0 bg-gray-900 bg-opacity-95 flex items-center justify-center z-50 p-4">
     <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200">
       <div class="text-center mb-6">
@@ -58,7 +43,7 @@
       <form onsubmit="event.preventDefault(); iniciarSesion(); return false;" class="flex flex-col gap-4">
         <div>
           <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Usuario:</label>
-          <input type="text" id="loginUsuario" required autocomplete="username" placeholder="Usuario (ej: admin o jmarcano)" 
+          <input type="text" id="loginUsuario" required autocomplete="username" placeholder="Usuario (ej: admin)" 
                  class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
         <div>
@@ -66,9 +51,7 @@
           <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="••••••••" 
                  class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm">
         </div>
-        
         <div id="loginError" class="hidden text-red-600 text-xs font-semibold text-center bg-red-50 p-2.5 rounded-lg border border-red-200"></div>
-
         <button type="submit" id="btnLoginSubmit" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-md transition mt-2 cursor-pointer flex items-center justify-center gap-2">
           <span>🔑 Iniciar Sesión</span>
         </button>
@@ -76,88 +59,63 @@
     </div>
   </div>
 
-  <!-- 2. BARRA SUPERIOR (HEADER) -->
+  <!-- 2. HEADER -->
   <header class="bg-blue-600 text-white p-3 sm:p-4 font-bold flex flex-col md:flex-row justify-between items-center shadow-md gap-2.5 sticky top-0 z-30">
     <div class="flex items-center justify-between w-full md:w-auto">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="cambiarVista('vender')">
         <span class="tracking-wide text-2xl font-black">iMtec</span>
         <span class="bg-blue-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded text-blue-200">POS</span>
       </div>
-
-      <!-- Accesos móviles (Tasa y Salir) -->
       <div class="flex md:hidden items-center gap-2">
         <div class="bg-blue-900 border border-blue-400/60 px-2.5 py-1 rounded-lg text-xs flex items-center gap-1 cursor-pointer" onclick="cambiarTasaBCVManual()">
           <span class="text-blue-200">BCV:</span>
           <span id="tasaBCVHeaderValMovil" class="font-bold text-amber-300">Bs. 50,00</span>
         </div>
-        <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 active:scale-95 text-xs px-2.5 py-1.5 rounded-lg transition font-bold shadow cursor-pointer">
-          🚪 Salir
-        </button>
+        <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-xs px-2.5 py-1.5 rounded-lg font-bold">🚪</button>
       </div>
     </div>
      
-    <!-- Pestañas de navegación -->
     <nav class="flex gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 text-xs font-normal w-full md:w-auto">
-      <button onclick="cambiarVista('vender')" id="btnNavVender" class="px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">
-        🛒 Vender
+      <button onclick="cambiarVista('vender')" id="btnNavVender" class="px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">🛒 Vender</button>
+      <button onclick="cambiarVista('ventas')" id="btnNavVentas" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">🧾 Ventas</button>
+      <button onclick="cambiarVista('cobranza')" id="btnNavCobranza" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap flex items-center gap-1">
+        <span>💰 Cobranza</span>
+        <span id="badgeDeudaNav" class="hidden bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.2 rounded-full font-black"></span>
       </button>
-      <button onclick="cambiarVista('ventas')" id="btnNavVentas" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
-        🧾 Ventas
-      </button>
-      <button onclick="cambiarVista('cobranza')" id="btnNavCobranza" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
-        💰 Cobranza
-      </button>
-      <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
-        👥 Clientes
-      </button>
-      <button onclick="cambiarVista('productos')" id="btnNavProductos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
-        📦 Productos
-      </button>
-      <button onclick="cambiarVista('usuarios')" id="btnNavUsuarios" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">
-        👤 Usuarios
-      </button>
+      <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👥 Clientes</button>
+      <button onclick="cambiarVista('productos')" id="btnNavProductos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📦 Productos</button>
+      <button onclick="cambiarVista('usuarios')" id="btnNavUsuarios" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👤 Usuarios</button>
     </nav>
     
-    <!-- Opciones de Pantallas Grandes -->
     <div class="hidden md:flex items-center gap-3">
       <div id="tasaBCVHeaderBadge" class="bg-blue-900 border border-blue-400/60 px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-inner" onclick="cambiarTasaBCVManual()">
         <span class="text-blue-200 font-semibold">Tasa BCV:</span>
         <span id="tasaBCVHeaderVal" class="font-bold text-amber-300">Bs. 50,00</span>
       </div>
-
       <div id="userInfo" class="text-xs text-right hidden">
         <div id="userNombre" class="font-bold text-sm"></div>
         <div id="userRol" class="text-blue-200 uppercase font-semibold text-[10px]"></div>
       </div>
-      <button onclick="cargarDatos()" class="bg-blue-800 hover:bg-blue-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">
-        🔄 Sincronizar
-      </button>
-      <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">
-        🚪 Salir
-      </button>
+      <button onclick="cargarDatos()" class="bg-blue-800 hover:bg-blue-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">🔄 Sincronizar</button>
+      <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">🚪 Salir</button>
     </div>
   </header>
 
-  <!-- 3. PANTALLA: VENDER (POS) -->
+  <!-- 3. VISTA: VENDER (POS) -->
   <div id="vistaVender" class="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden p-3 sm:p-4 gap-4 max-w-7xl mx-auto w-full">
-    
-    <!-- Catálogo y Buscador POS -->
     <div class="w-full lg:w-3/5 flex flex-col gap-3">
       <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-1.5">
         <label class="text-[11px] font-bold text-gray-500 uppercase flex justify-between items-center">
           <span>Escanear o Buscar Producto:</span>
           <span id="cantProductosLabel" class="text-blue-600 font-semibold lowercase"></span>
         </label>
-        
-        <!-- Barra de POS con Botón de Cámara -->
         <div class="relative flex items-center">
           <input type="text" id="barcodeInput" placeholder="🔍 Escribe nombre o código de barra..." 
                  class="border border-gray-300 p-2.5 pl-3 pr-24 rounded-lg w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500" 
                  oninput="filtrarProductos(this.value)"
                  onkeydown="if(event.key === 'Enter') buscarYAgregar(this.value)">
-          
           <button type="button" onclick="abrirEscanerCamara('pos')" 
-                  class="absolute right-1.5 top-1.5 bottom-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-3 rounded-md text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer transition">
+                  class="absolute right-1.5 top-1.5 bottom-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-md text-xs font-bold flex items-center gap-1.5 shadow cursor-pointer transition">
             <span>📷</span>
             <span class="hidden sm:inline">Cámara</span>
           </button>
@@ -169,7 +127,7 @@
       </div>
     </div>
 
-    <!-- Carrito de Compras -->
+    <!-- Carrito -->
     <div class="w-full lg:w-2/5 bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
       <div>
         <h2 class="font-bold text-gray-700 border-b pb-2 mb-3 text-sm flex items-center justify-between">
@@ -177,7 +135,6 @@
           <span id="labelProximoTicket" class="text-xs font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded border border-amber-300">Ticket: #0000001</span>
         </h2>
         
-        <!-- Cliente -->
         <div class="mb-3 relative">
           <label class="text-xs font-bold text-gray-600">Cliente:</label>
           <div id="clienteSeleccionadoDiv" class="hidden flex justify-between items-center bg-blue-50 border border-blue-300 rounded-lg p-2 mt-1">
@@ -185,16 +142,13 @@
             <button onclick="desseleccionarCliente()" class="text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 cursor-pointer">✕</button>
           </div>
           <div id="clienteBuscadorInputDiv" class="mt-1">
-            <input type="text" id="inputBuscarClienteCarrito" 
-                   placeholder="🔍 Buscar por nombre o Cédula/RIF..." 
-                   oninput="filtrarClientesCarrito(this.value)"
-                   onfocus="filtrarClientesCarrito(this.value)"
+            <input type="text" id="inputBuscarClienteCarrito" placeholder="🔍 Buscar por nombre o Cédula/RIF..." 
+                   oninput="filtrarClientesCarrito(this.value)" onfocus="filtrarClientesCarrito(this.value)"
                    class="w-full border p-2 rounded-lg text-xs bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none">
             <div id="dropClientesCarrito" class="hidden absolute left-0 right-0 bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-44 overflow-y-auto z-20 mt-1"></div>
           </div>
         </div>
 
-        <!-- Tabla Carrito -->
         <div class="overflow-y-auto border rounded-lg max-h-[30vh] lg:max-h-[35vh]">
           <table class="w-full text-left text-xs">
             <thead>
@@ -210,7 +164,6 @@
         </div>
       </div>
 
-      <!-- Resumen y Cobro -->
       <div class="border-t pt-3 mt-3">
         <div class="bg-slate-900 text-white p-3 rounded-xl mb-3 flex flex-col gap-1">
           <div class="flex justify-between items-center text-xs text-slate-300">
@@ -235,7 +188,7 @@
     </div>
   </div>
 
-  <!-- 4. PANTALLA: PRODUCTOS / INVENTARIO (CON BOTÓN DE CÁMARA EN EL CAMPO CÓDIGO) -->
+  <!-- 4. VISTA: PRODUCTOS -->
   <div id="vistaProductos" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full">
     <div class="w-full lg:w-3/5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col gap-4">
       <div class="flex justify-between items-center border-b pb-3">
@@ -243,33 +196,23 @@
           <h2 id="tituloFormProd" class="text-base sm:text-lg font-black text-gray-800">📦 Registrar Producto - iMtec</h2>
           <p class="text-[11px] text-gray-500">Cálculos automáticos con tasa BCV</p>
         </div>
-        <span class="text-xs bg-blue-50 text-blue-800 border border-blue-200 font-bold px-2.5 py-1 rounded-full" id="badgeTasaFormProd">
-          Tasa: Bs. 50,00
-        </span>
+        <span class="text-xs bg-blue-50 text-blue-800 border border-blue-200 font-bold px-2.5 py-1 rounded-full" id="badgeTasaFormProd">Tasa: Bs. 50,00</span>
       </div>
 
       <form onsubmit="guardarProducto(event)" class="flex flex-col gap-3">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          
-          <!-- CAMPO CÓDIGO CON BOTÓN DE CÁMARA INTEGRADO -->
           <div>
             <label class="block text-xs font-bold text-gray-600 uppercase mb-1 flex justify-between items-center">
               <span>Código:</span>
               <span class="text-[10px] text-blue-600 normal-case font-semibold">Escanear o escribir</span>
             </label>
             <div class="relative flex items-center">
-              <input type="text" id="prodCodigo" required placeholder="Ej: 7591234567890" 
-                     class="w-full border p-2 pr-24 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none">
-              
-              <!-- BOTÓN DE CÁMARA PARA INVENTARIO -->
-              <button type="button" onclick="abrirEscanerCamara('inventario')" 
-                      class="absolute right-1 top-1 bottom-1 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-2.5 rounded-md text-xs font-bold flex items-center gap-1 shadow cursor-pointer transition">
-                <span>📷</span>
-                <span>Escanear</span>
+              <input type="text" id="prodCodigo" required placeholder="Ej: 7591234567890" class="w-full border p-2 pr-24 rounded-lg text-xs font-mono font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+              <button type="button" onclick="abrirEscanerCamara('inventario')" class="absolute right-1 top-1 bottom-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 rounded-md text-xs font-bold flex items-center gap-1 shadow cursor-pointer">
+                <span>📷</span><span>Escanear</span>
               </button>
             </div>
           </div>
-
           <div>
             <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre / Descripción:</label>
             <input type="text" id="prodNombre" required placeholder="Ej: Harina PAN 1kg" class="w-full border p-2 rounded-lg text-xs font-semibold">
@@ -283,10 +226,11 @@
               <select id="prodMonedaCosto" onchange="recalcularValoresProducto()" class="w-full border p-1.5 rounded-lg text-xs font-bold bg-white">
                 <option value="Divisas">💵 Divisas ($)</option>
                 <option value="Bs">🇻🇪 Bs (Bolívares)</option>
+                <option value="Precio Fijo">🔒 Precio Fijo</option>
               </select>
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-gray-700 uppercase mb-1">Costo Base:</label>
+              <label id="labelProdCosto" class="block text-[10px] font-bold text-gray-700 uppercase mb-1">Costo Base ($):</label>
               <input type="number" step="0.0001" min="0" id="prodCosto" required placeholder="10.00" oninput="recalcularValoresProducto()" class="w-full border p-1.5 rounded-lg text-xs font-bold">
             </div>
             <div>
@@ -297,6 +241,9 @@
               <label class="block text-[10px] font-bold text-gray-700 uppercase mb-1">Impuesto (%):</label>
               <input type="number" step="0.01" min="0" id="prodImpuesto" value="0.00" oninput="recalcularValoresProducto()" class="w-full border p-1.5 rounded-lg text-xs font-bold">
             </div>
+          </div>
+          <div id="bannerPrecioFijoInfo" class="hidden bg-amber-100 border border-amber-300 text-amber-900 px-3 py-1.5 rounded-lg text-[11px] font-semibold mt-1">
+            🔒 <strong>Precio Fijo:</strong> El precio de este producto en Bolívares (Bs.) se mantendrá fijo y no variará cuando cambie la tasa del dólar.
           </div>
         </div>
 
@@ -315,8 +262,11 @@
               <input type="number" step="0.01" min="0.01" id="prodPrecioRealDivisas" required placeholder="1.50" oninput="recalcularPrecioBsDesdeReal()" class="w-full border-2 border-emerald-500 p-1.5 rounded-lg text-xs font-black text-emerald-900 bg-white">
             </div>
             <div>
-              <label class="block text-[10px] font-bold text-emerald-900 uppercase mb-1">Precio Real (Bs):</label>
-              <input type="number" step="0.01" id="prodPrecioBs" required placeholder="75.00" class="w-full border border-emerald-300 p-1.5 rounded-lg text-xs font-black text-emerald-800 bg-emerald-100">
+              <label class="block text-[10px] font-bold text-emerald-900 uppercase mb-1 flex items-center justify-between">
+                <span>Precio Real (Bs):</span>
+                <span id="badgeFijoEditable" class="hidden text-[8px] bg-amber-200 text-amber-900 px-1 rounded font-bold">Editable</span>
+              </label>
+              <input type="number" step="0.01" id="prodPrecioBs" required placeholder="75.00" oninput="recalcularPrecioUSDDesdeBs()" class="w-full border border-emerald-300 p-1.5 rounded-lg text-xs font-black text-emerald-800 bg-emerald-100">
             </div>
           </div>
           <div class="w-full sm:w-1/3">
@@ -332,7 +282,6 @@
       </form>
     </div>
 
-    <!-- Lista de productos -->
     <div class="w-full lg:w-2/5 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col max-h-[70vh]">
       <h2 class="text-sm font-black text-gray-800 border-b pb-2 mb-2">Catálogo de Productos</h2>
       <input type="text" placeholder="🔍 Buscar producto..." oninput="renderTablasGestionProductos(this.value)" class="w-full border p-2 rounded-lg mb-2 text-xs">
@@ -340,7 +289,7 @@
     </div>
   </div>
 
-  <!-- 5. PANTALLA: HISTORIAL DE VENTAS -->
+  <!-- 5. VISTA: HISTORIAL DE VENTAS -->
   <div id="vistaVentas" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 max-w-7xl mx-auto w-full">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200">
@@ -366,50 +315,32 @@
       </div>
     </div>
 
-    <!-- Filtros -->
     <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2.5">
       <div class="flex flex-col lg:flex-row gap-2 items-center justify-between">
         <div class="w-full lg:w-1/3">
-          <input type="text" id="filtroTextoVentas" 
-                 placeholder="🔍 Buscar por ticket #, cliente, vendedor, ref..." 
-                 oninput="filtrarVentas()" 
+          <input type="text" id="filtroTextoVentas" placeholder="🔍 Buscar por ticket #, cliente, vendedor, ref..." oninput="filtrarVentas()" 
                  class="w-full border border-gray-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
         </div>
-
         <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
           <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
-            <label for="filtroFechaInicio" class="text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
-            <input type="date" id="filtroFechaInicio" onchange="filtrarVentas()" 
-                   class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
+            <input type="date" id="filtroFechaInicio" onchange="filtrarVentas()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
           </div>
-
           <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
-            <label for="filtroFechaFin" class="text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
-            <input type="date" id="filtroFechaFin" onchange="filtrarVentas()" 
-                   class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
+            <input type="date" id="filtroFechaFin" onchange="filtrarVentas()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
           </div>
-
-          <select id="filtroTipoVenta" onchange="filtrarVentas()" 
-                  class="border border-gray-300 p-1.5 rounded-lg text-xs bg-white font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+          <select id="filtroTipoVenta" onchange="filtrarVentas()" class="border border-gray-300 p-1.5 rounded-lg text-xs bg-white font-medium">
             <option value="todos">Todos los pagos</option>
             <option value="Contado">Solo Contado</option>
             <option value="Crédito">Solo Crédito</option>
           </select>
-
-          <button type="button" onclick="limpiarFiltroFechas()" title="Limpiar fechas" 
-                  class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">
-            🧹
-          </button>
-
-          <button type="button" onclick="cargarDatos()" 
-                  class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
-            🔄 Actualizar
-          </button>
+          <button type="button" onclick="limpiarFiltroFechas()" title="Limpiar fechas" class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">🧹</button>
+          <button type="button" onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">🔄 Actualizar</button>
         </div>
       </div>
     </div>
 
-    <!-- Tabla Ventas -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
@@ -432,7 +363,7 @@
     </div>
   </div>
 
-  <!-- 6. PANTALLA: CLIENTES -->
+  <!-- 6. VISTA: CLIENTES -->
   <div id="vistaClientes" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full">
     <div class="w-full lg:w-1/2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
       <h2 id="tituloFormCli" class="text-base sm:text-lg font-bold text-gray-800 border-b pb-2 mb-3">👥 Registrar Cliente</h2>
@@ -462,7 +393,7 @@
     </div>
   </div>
 
-  <!-- 7. PANTALLA: USUARIOS -->
+  <!-- 7. VISTA: USUARIOS -->
   <div id="vistaUsuarios" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto w-full">
     <div class="w-full lg:w-1/2 bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
       <h2 id="tituloFormUser" class="text-base sm:text-lg font-bold text-gray-800 border-b pb-2 mb-3">👤 Registrar Usuario</h2>
@@ -477,7 +408,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña:</label>
-          <input type="text" id="userPasswordInput" required placeholder="••••••••" class="w-full border p-2.5 rounded-lg text-xs">
+          <input type="password" id="userPasswordInput" required placeholder="••••••••" class="w-full border p-2.5 rounded-lg text-xs">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Rol:</label>
@@ -499,16 +430,73 @@
     </div>
   </div>
 
-  <!-- 8. PANTALLA: CUENTAS POR COBRAR -->
+  <!-- 8. VISTA MODIFICADA: CUENTAS POR COBRAR (COBRANZA CON FILTRO DE FECHA Y TOTALES ACUMULADOS) -->
   <div id="vistaCobranza" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 max-w-7xl mx-auto w-full">
-    <div class="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
-      <div class="flex justify-between items-center border-b pb-3 mb-3">
-        <h2 class="text-base sm:text-lg font-bold text-gray-800">💰 Cuentas por Cobrar (Créditos)</h2>
-        <button onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition">🔄 Actualizar</button>
+    
+    <!-- TARJETA DINÁMICA DE SALDOS (GENERAL vs CLIENTE BUSCADO) -->
+    <div id="tarjetaResumenCobranza" class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-6 rounded-2xl shadow-xl border border-blue-800/40">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="badgeTipoCobranza" class="bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+              SALDO PENDIENTE GENERAL
+            </span>
+            <span id="subtituloCobranza" class="text-xs text-blue-200 font-medium">Estado global de deudas</span>
+          </div>
+          <h2 id="tituloResumenCobranza" class="text-lg sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>Cuentas por Cobrar (Créditos)</span>
+          </h2>
+          <p id="descResumenCobranza" class="text-xs text-slate-300 mt-1 max-w-xl">
+            Suma total pendiente de todos los clientes a crédito calculada a tasa oficial BCV.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap sm:flex-nowrap items-baseline gap-4 bg-slate-800/80 border border-blue-400/20 p-3 sm:p-4 rounded-xl">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block" id="lblDeudaUSD">Total en Divisas ($)</span>
+            <span id="totalCobranzaUSD" class="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">$0.00</span>
+          </div>
+          <div class="h-8 w-px bg-slate-700 hidden sm:block"></div>
+          <div>
+            <span class="text-[10px] uppercase font-bold text-slate-400 block" id="lblDeudaBS">Total en Bolívares (Bs.)</span>
+            <span id="totalCobranzaBS" class="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">Bs. 0,00</span>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <!-- FILTROS DE COBRANZA: BUSCADOR + FECHAS (DESDE / HASTA) -->
+    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2.5">
+      <div class="flex flex-col lg:flex-row gap-2 items-center justify-between">
+        <div class="w-full lg:w-1/3">
+          <input type="text" id="filtroCobranza" placeholder="🔍 Buscar por cliente (nombre, cédula) o ticket #..." 
+                 oninput="renderTablaCobranza()" class="w-full border border-gray-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
+            <input type="date" id="filtroCobranzaFechaInicio" onchange="renderTablaCobranza()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
+            <input type="date" id="filtroCobranzaFechaFin" onchange="renderTablaCobranza()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+
+          <button type="button" onclick="limpiarFiltrosCobranza()" title="Limpiar filtros" class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">
+            🧹 Limpiar
+          </button>
+
+          <button type="button" onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 whitespace-nowrap cursor-pointer">
+            🔄 Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
       
-      <input type="text" id="filtroCobranza" placeholder="🔍 Buscar por cliente o ticket..." oninput="renderTablaCobranza()" class="w-full border p-2 rounded-lg mb-3 text-xs">
-      
+    <!-- TABLA DE CUENTAS POR COBRAR -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
@@ -516,7 +504,10 @@
               <th class="p-3 font-bold">Ticket #</th>
               <th class="p-3 font-bold">Fecha</th>
               <th class="p-3 font-bold">Cliente</th>
-              <th class="p-3 font-bold text-right">Deuda (USD)</th>
+              <th class="p-3 font-bold text-right">Total Factura</th>
+              <th class="p-3 font-bold text-right">Abonado ($)</th>
+              <th class="p-3 font-bold text-right text-red-600">Deuda ($)</th>
+              <th class="p-3 font-bold text-right text-emerald-700">Deuda (Bs.)</th>
               <th class="p-3 font-bold text-center">Acción</th>
             </tr>
           </thead>
@@ -537,10 +528,10 @@
       <form onsubmit="guardarAbono(event)" class="flex flex-col gap-3">
         <input type="hidden" id="abonoIdVenta">
         
-        <div class="bg-blue-50 p-2 rounded-lg border border-blue-200 text-center mb-1">
+        <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200 text-center mb-1">
           <span class="text-[10px] text-blue-600 font-bold uppercase">Deuda Restante:</span>
           <div class="text-sm font-black text-blue-800">
-            <span id="abonoDeudaUSD">$0.00</span> / <span id="abonoDeudaBS" class="text-gray-600">0.00 Bs</span>
+            <span id="abonoDeudaUSD" class="text-amber-600 font-black">$0.00</span> / <span id="abonoDeudaBS" class="text-emerald-700 font-black">0.00 Bs</span>
           </div>
         </div>
 
@@ -571,7 +562,7 @@
     </div>
   </div>
 
-  <!-- 10. MODAL DE CÁMARA PARA ESCANEAR CÓDIGOS DE BARRA (COMPATIBLE POS E INVENTARIO) -->
+  <!-- 10. MODAL DE CÁMARA -->
   <div id="modalEscanerCamara" class="hidden fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-300">
       <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -584,24 +575,17 @@
         </div>
         <button onclick="cerrarEscanerCamara()" class="text-slate-400 hover:text-white font-bold text-xl cursor-pointer p-1">✕</button>
       </div>
-      
-      <!-- Visor de la Cámara -->
       <div class="relative bg-black min-h-[260px] max-h-[320px] flex items-center justify-center overflow-hidden">
         <div id="readerCamara" style="width: 100%; height: 100%;"></div>
       </div>
-      
       <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col gap-2.5">
-        <div id="txtUltimoEscaneado" class="text-xs text-center text-slate-600 font-medium py-1">
-          💡 Centra el código de barras o QR en la pantalla.
-        </div>
-        <button onclick="cerrarEscanerCamara()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 rounded-xl shadow cursor-pointer">
-          Cerrar Escáner
-        </button>
+        <div id="txtUltimoEscaneado" class="text-xs text-center text-slate-600 font-medium py-1">💡 Centra el código de barras o QR en la pantalla.</div>
+        <button onclick="cerrarEscanerCamara()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-3 rounded-xl shadow cursor-pointer">Cerrar Escáner</button>
       </div>
     </div>
   </div>
 
-  <!-- 11. MODAL DE COBRO DISCRIMINADO (CONTADO) -->
+  <!-- 11. MODAL DE COBRO CONTADO -->
   <div id="modalCobroPago" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 border border-gray-200 flex flex-col max-h-[95vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b pb-2 mb-3">
@@ -652,10 +636,7 @@
             <button type="button" onclick="atajoPagarRestante('Efectivo Bs')" class="bg-amber-100 text-amber-800 px-2 py-1 rounded font-semibold cursor-pointer">Todo Efec. Bs</button>
             <button type="button" onclick="atajoPagarRestante('Efectivo USD')" class="bg-purple-100 text-purple-800 px-2 py-1 rounded font-semibold cursor-pointer">Todo Efec. $</button>
           </div>
-
-          <button type="button" onclick="agregarMetodoPagoFila()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer">
-            ➕ Agregar
-          </button>
+          <button type="button" onclick="agregarMetodoPagoFila()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer">➕ Agregar</button>
         </div>
       </div>
 
@@ -683,9 +664,7 @@
       </div>
 
       <div class="flex gap-2">
-        <button type="button" onclick="cerrarModalCobro()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl text-xs transition cursor-pointer">
-          Cancelar
-        </button>
+        <button type="button" onclick="cerrarModalCobro()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl text-xs transition cursor-pointer">Cancelar</button>
         <button type="button" id="btnConfirmarVentaFinal" onclick="confirmarVentaConPagos()" disabled
                 class="w-2/3 bg-gray-400 text-white font-black py-3 rounded-xl text-xs shadow transition cursor-not-allowed flex items-center justify-center gap-1.5">
           <span>🔒 Completar Venta</span>
@@ -694,7 +673,7 @@
     </div>
   </div>
 
-  <!-- 12. TICKET TÉRMICO PARA IMPRESIÓN (80MM / 58MM) -->
+  <!-- 12. TICKET TÉRMICO -->
   <div id="ticketTermicoContainer" class="hidden">
     <div style="text-align: center; margin-bottom: 4px;">
       <h2 style="font-size: 14px; font-weight: bold; margin: 0;">iMtec POS</h2>
@@ -737,9 +716,7 @@
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- 13. SCRIPT DE CONTROL Y FUNCIONAMIENTO                   -->
-  <!-- ======================================================== -->
+  <!-- SCRIPT -->
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMJbzcun83VxOSfBGy5Qy7GT8iPo7M-gU6rUMMnW87yJQln5adUipG6bkoZuQ2ou-b/exec";
 
@@ -757,150 +734,33 @@
     let tasaBCVActual = 50.00;
     let deudaAbonoActualUSD = 0;
     let html5QrCodeScanner = null;
-    let destinoEscaneoActual = 'pos'; // 'pos' o 'inventario'
-    
+    let destinoEscaneoActual = 'pos';
     let modoEdicionProd = false;
     let modoEdicionCli = false;
     let modoEdicionUser = false;
 
-    // Beep de escaneo
-    function reproducirBeep() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.15);
-      } catch (e) {}
-    }
-
-    // ABRIR CÁMARA (Compatible para POS o Inventario)
-    async function abrirEscanerCamara(destino = 'pos') {
-      destinoEscaneoActual = destino;
-      const modal = document.getElementById("modalEscanerCamara");
-      const txtTitulo = document.getElementById("modalCamaraTitulo");
-      const txtSubtitulo = document.getElementById("modalCamaraSubtitulo");
-      const txtUltimo = document.getElementById("txtUltimoEscaneado");
-
-      if (destino === 'inventario') {
-        txtTitulo.innerText = "Escanear Código para Inventario";
-        txtSubtitulo.innerText = "Apunta la cámara para rellenar el código del producto";
-      } else {
-        txtTitulo.innerText = "Escáner de Código de Barras";
-        txtSubtitulo.innerText = "Apunta la cámara hacia el código del producto para vender";
-      }
-
-      modal.classList.remove("hidden");
-      txtUltimo.innerText = "Iniciando cámara...";
-
-      if (!html5QrCodeScanner) {
-        html5QrCodeScanner = new Html5Qrcode("readerCamara");
-      }
-
-      try {
-        await html5QrCodeScanner.start(
-          { facingMode: "environment" },
-          { fps: 15, qrbox: { width: 250, height: 160 } },
-          (decodedText) => {
-            const codigo = decodedText.trim();
-            reproducirBeep();
-            txtUltimo.innerHTML = `✅ <strong>Detectado:</strong> ${codigo}`;
-
-            if (destinoEscaneoActual === 'inventario') {
-              // 1. Rellenar campo código en el formulario de productos
-              document.getElementById("prodCodigo").value = codigo;
-              
-              // 2. Si el producto ya existe en la base de datos, cargar sus datos para modificar
-              const prodExistente = dbProductos.find(p => p.Codigo.toString().toLowerCase() === codigo.toLowerCase());
-              if (prodExistente) {
-                prepararEdicionProd(prodExistente.Codigo);
-              }
-              
-              // 3. Cerrar la cámara
-              cerrarEscanerCamara();
-            } else {
-              // Comportamiento en POS (Ventas)
-              const prod = dbProductos.find(p => p.Codigo.toString().toLowerCase() === codigo.toLowerCase());
-              if (prod) {
-                agregarAlCarrito(prod.Codigo);
-              } else {
-                document.getElementById("barcodeInput").value = codigo;
-                filtrarProductos(codigo);
-              }
-            }
-          },
-          (error) => {}
-        );
-        txtUltimo.innerText = "💡 Centra el código de barras en el recuadro";
-      } catch (err) {
-        alert("Por favor permite el acceso a la cámara en los permisos de tu navegador.");
-        cerrarEscanerCamara();
-      }
-    }
-
-    async function cerrarEscanerCamara() {
-      if (html5QrCodeScanner) {
-        try {
-          await html5QrCodeScanner.stop();
-          html5QrCodeScanner.clear();
-        } catch (e) {}
-      }
-      document.getElementById("modalEscanerCamara").classList.add("hidden");
-    }
-
     function formatearFechaLatina(fechaOriginal) {
       if (!fechaOriginal || fechaOriginal === "N/A") return "N/A";
-      if (typeof fechaOriginal === "string" && /^\d{2}\/\d{2}\/\d{4}/.test(fechaOriginal)) {
-        return fechaOriginal;
-      }
+      if (typeof fechaOriginal === "string" && /^\d{2}\/\d{2}\/\d{4}/.test(fechaOriginal)) return fechaOriginal;
       const d = new Date(fechaOriginal);
       if (isNaN(d.getTime())) return fechaOriginal.toString();
-      
-      return d.toLocaleString('es-VE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
+      return d.toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
     function formatearBS(monto) {
-      return new Intl.NumberFormat('es-VE', { 
-        style: 'currency', 
-        currency: 'VES', 
-        minimumFractionDigits: 2 
-      }).format(monto || 0).replace("VES", "Bs.");
+      return new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'VES', minimumFractionDigits: 2 }).format(monto || 0).replace("VES", "Bs.");
     }
 
     function parsearFechaVenta(fechaStr) {
       if (!fechaStr) return null;
-      const partesLatina = fechaStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-      if (partesLatina) {
-        const dia = parseInt(partesLatina[1], 10);
-        const mes = parseInt(partesLatina[2], 10) - 1;
-        const anio = parseInt(partesLatina[3], 10);
-        return new Date(anio, mes, dia);
-      }
-      const partesISO = fechaStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-      if (partesISO) {
-        const anio = parseInt(partesISO[1], 10);
-        const mes = parseInt(partesISO[2], 10) - 1;
-        const dia = parseInt(partesISO[3], 10);
-        return new Date(anio, mes, dia);
-      }
+      const pLatina = fechaStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (pLatina) return new Date(parseInt(pLatina[3], 10), parseInt(pLatina[2], 10) - 1, parseInt(pLatina[1], 10));
+      const pISO = fechaStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (pISO) return new Date(parseInt(pISO[1], 10), parseInt(pISO[2], 10) - 1, parseInt(pISO[3], 10));
       const d = new Date(fechaStr);
       return isNaN(d.getTime()) ? null : d;
     }
 
-    // CORRELATIVO
     function obtenerSiguienteCorrelativo() {
       let maxNum = 0;
       dbVentas.forEach(v => {
@@ -911,8 +771,7 @@
           if (!isNaN(n) && n < 10000000 && n > maxNum) maxNum = n;
         }
       });
-      const siguiente = maxNum > 0 ? maxNum + 1 : (dbVentas.length + 1);
-      return "#" + String(siguiente).padStart(7, '0');
+      return "#" + String(maxNum > 0 ? maxNum + 1 : dbVentas.length + 1).padStart(7, '0');
     }
 
     function actualizarLabelProximoTicket() {
@@ -920,21 +779,18 @@
       if (lbl) lbl.innerText = "Ticket: " + obtenerSiguienteCorrelativo();
     }
 
-    // LOGIN & PERMISOS
     async function iniciarSesion() {
       const btn = document.getElementById("btnLoginSubmit");
       const errDiv = document.getElementById("loginError");
       errDiv.classList.add("hidden");
-
       const usuario = (document.getElementById("loginUsuario").value || "").trim();
       const password = (document.getElementById("loginPassword").value || "").trim();
 
       if (!usuario || !password) {
-        errDiv.innerText = "Por favor ingresa tu usuario y contraseña.";
+        errDiv.innerText = "Por favor ingresa usuario y contraseña.";
         errDiv.classList.remove("hidden");
         return false;
       }
-
       btn.disabled = true;
       btn.innerHTML = "<span>⏳ Verificando...</span>";
 
@@ -942,23 +798,21 @@
         const res = await fetch(SCRIPT_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "login", usuario: usuario, password: password })
+          body: JSON.stringify({ action: "login", usuario, password })
         });
         const data = await res.json();
-
         if (data.status === "error") {
-          errDiv.innerText = data.message || "Usuario o contraseña incorrectos.";
+          errDiv.innerText = data.message || "Credenciales incorrectas.";
           errDiv.classList.remove("hidden");
           btn.disabled = false;
           btn.innerHTML = "<span>🔑 Iniciar Sesión</span>";
           return false;
         }
-
         usuarioActual = data.usuario;
         localStorage.setItem("imtec_user", JSON.stringify(usuarioActual));
         aplicarPermisosYMostrarApp();
       } catch (err) {
-        errDiv.innerText = "Error de conexión con el servidor.";
+        errDiv.innerText = "Error conectando con el servidor.";
         errDiv.classList.remove("hidden");
         btn.disabled = false;
         btn.innerHTML = "<span>🔑 Iniciar Sesión</span>";
@@ -982,31 +836,22 @@
 
     function aplicarPermisosYMostrarApp() {
       if (!usuarioActual) return;
-      
-      const rolUsuario = (usuarioActual.role || usuarioActual.roll || usuarioActual.Rol || usuarioActual.rol || "vendedor")
-        .toString()
-        .toLowerCase()
-        .trim();
-
-      usuarioActual.role = rolUsuario;
-      usuarioActual.roll = rolUsuario;
-
+      const rol = (usuarioActual.role || usuarioActual.roll || "vendedor").toLowerCase().trim();
+      usuarioActual.role = rol;
       document.getElementById("modalLogin").classList.add("hidden");
       document.getElementById("userInfo").classList.remove("hidden");
       document.getElementById("userNombre").innerText = usuarioActual.nombre;
-      document.getElementById("userRol").innerText = "Rol: " + rolUsuario;
+      document.getElementById("userRol").innerText = "Rol: " + rol;
 
       const btnProd = document.getElementById("btnNavProductos");
       const btnUsers = document.getElementById("btnNavUsuarios");
-
-      if (rolUsuario === "admin") {
+      if (rol === "admin") {
         if (btnProd) btnProd.classList.remove("hidden");
         if (btnUsers) btnUsers.classList.remove("hidden");
       } else {
         if (btnProd) btnProd.classList.add("hidden");
         if (btnUsers) btnUsers.classList.add("hidden");
       }
-
       cambiarVista('vender');
       cargarDatos();
     }
@@ -1020,47 +865,30 @@
     }
 
     function cambiarVista(vista) {
-      const rol = (usuarioActual && (usuarioActual.role || usuarioActual.roll || usuarioActual.Rol || usuarioActual.rol || ""))
-        .toString().toLowerCase().trim();
-
-      if (rol !== "admin" && (vista === 'productos' || vista === 'usuarios')) {
-        vista = 'vender';
-      }
-
-      document.getElementById('vistaVender').classList.add('hidden');
-      document.getElementById('vistaVentas').classList.add('hidden');
-      document.getElementById('vistaProductos').classList.add('hidden');
-      document.getElementById('vistaClientes').classList.add('hidden');
-      document.getElementById('vistaUsuarios').classList.add('hidden');
-      document.getElementById('vistaCobranza').classList.add('hidden');
-
+      ['vistaVender', 'vistaVentas', 'vistaProductos', 'vistaClientes', 'vistaUsuarios', 'vistaCobranza'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
       ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios', 'btnNavCobranza'].forEach(id => {
         const b = document.getElementById(id);
         if (b) b.className = 'px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
       });
 
-      if (vista === 'vender') {
-        document.getElementById('vistaVender').classList.remove('hidden');
-        document.getElementById('btnNavVender').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-      } else if (vista === 'ventas') {
-        document.getElementById('vistaVentas').classList.remove('hidden');
-        document.getElementById('btnNavVentas').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-        renderTablasGestionVentas();
-      } else if (vista === 'productos') {
-        document.getElementById('vistaProductos').classList.remove('hidden');
-        document.getElementById('btnNavProductos').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-        recalcularValoresProducto();
-      } else if (vista === 'clientes') {
-        document.getElementById('vistaClientes').classList.remove('hidden');
-        document.getElementById('btnNavClientes').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-      } else if (vista === 'usuarios') {
-        document.getElementById('vistaUsuarios').classList.remove('hidden');
-        document.getElementById('btnNavUsuarios').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-      } else if (vista === 'cobranza') {
-        document.getElementById('vistaCobranza').classList.remove('hidden');
-        document.getElementById('btnNavCobranza').className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
-        renderTablaCobranza();
-      }
+      const vistaMap = {
+        vender: 'vistaVender', ventas: 'vistaVentas', productos: 'vistaProductos',
+        clientes: 'vistaClientes', usuarios: 'vistaUsuarios', cobranza: 'vistaCobranza'
+      };
+      const btnMap = {
+        vender: 'btnNavVender', ventas: 'btnNavVentas', productos: 'btnNavProductos',
+        clientes: 'btnNavClientes', usuarios: 'btnNavUsuarios', cobranza: 'btnNavCobranza'
+      };
+
+      if (vistaMap[vista]) document.getElementById(vistaMap[vista]).classList.remove('hidden');
+      if (btnMap[vista]) document.getElementById(btnMap[vista]).className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+
+      if (vista === 'ventas') renderTablasGestionVentas();
+      if (vista === 'cobranza') renderTablaCobranza();
+      if (vista === 'productos') recalcularValoresProducto();
     }
 
     async function cargarDatos() {
@@ -1081,12 +909,18 @@
         }
 
         dbProductos.forEach(p => {
-          const precioUSD = Number(p.PrecioVtaRealDivisas || p.Precio) || 0;
-          p.PrecioBs = precioUSD * tasaBCVActual;
+          if (p.incluir_Costo_en_Bs_o_Divisas === "Precio Fijo") {
+            const precioBsFijo = Number(p.PrecioBs) || 0;
+            p.PrecioBs = precioBsFijo;
+            p.Precio = tasaBCVActual > 0 ? Number((precioBsFijo / tasaBCVActual).toFixed(2)) : (p.Precio || 0);
+            p.PrecioVtaRealDivisas = p.Precio;
+          } else {
+            const precioUSD = Number(p.PrecioVtaRealDivisas || p.Precio) || 0;
+            p.PrecioBs = Number((precioUSD * tasaBCVActual).toFixed(2));
+          }
         });
 
         productosFiltrados = [...dbProductos];
-
         renderProductos();
         renderTablasGestionProductos();
         renderTablasGestionClientes();
@@ -1109,172 +943,277 @@
     }
 
     async function cambiarTasaBCVManual() {
-      const rol = (usuarioActual && (usuarioActual.role || usuarioActual.roll || usuarioActual.Rol || usuarioActual.rol || ""))
-        .toString()
-        .toLowerCase()
-        .trim();
-
+      const rol = (usuarioActual?.role || "").toLowerCase().trim();
       if (rol !== "admin") {
-        alert("⚠️ Acceso denegado: Solo los usuarios con rol Administrador pueden modificar la tasa BCV del día.");
-        return false;
+        alert("⚠️ Acceso denegado: Solo el Administrador puede modificar la tasa BCV.");
+        return;
       }
-
-      const nueva = prompt(`Ingresa la nueva tasa BCV del día (Tasa actual: Bs. ${tasaBCVActual.toFixed(2)}):`, tasaBCVActual.toString());
+      const nueva = prompt(`Ingresa la nueva tasa BCV (Actual: Bs. ${tasaBCVActual.toFixed(2)}):`, tasaBCVActual.toString());
       if (!nueva || isNaN(Number(nueva)) || Number(nueva) <= 0) return;
 
-      const nuevaTasaNum = Number(nueva);
-      tasaBCVActual = nuevaTasaNum;
+      tasaBCVActual = Number(nueva);
       actualizarBadgeTasaUI();
       recalcularValoresProducto();
-
       dbProductos.forEach(p => {
-        const precioUSD = Number(p.PrecioVtaRealDivisas || p.Precio) || 0;
-        p.PrecioBs = precioUSD * tasaBCVActual;
+        if (p.incluir_Costo_en_Bs_o_Divisas === "Precio Fijo") {
+          const precioBsFijo = Number(p.PrecioBs) || 0;
+          p.PrecioBs = precioBsFijo;
+          p.Precio = tasaBCVActual > 0 ? Number((precioBsFijo / tasaBCVActual).toFixed(2)) : (p.Precio || 0);
+          p.PrecioVtaRealDivisas = p.Precio;
+        } else {
+          const precioUSD = Number(p.PrecioVtaRealDivisas || p.Precio) || 0;
+          p.PrecioBs = Number((precioUSD * tasaBCVActual).toFixed(2));
+        }
       });
-
       productosFiltrados = [...dbProductos];
       renderProductos();
       renderTablasGestionProductos();
+      renderTablaCobranza();
 
       try {
         await fetch(SCRIPT_URL, {
           method: "POST",
-          body: JSON.stringify({ action: "guardarTasaBCV", tasa: nuevaTasaNum })
+          body: JSON.stringify({ action: "guardarTasaBCV", tasa: tasaBCVActual })
         });
       } catch (e) {}
     }
 
-    // PRODUCTOS & COSTOS
-    function recalcularValoresProducto() {
-      const moneda = document.getElementById("prodMonedaCosto").value;
-      const costo = Math.max(0, parseFloat(document.getElementById("prodCosto").value) || 0);
-      const unidades = Math.max(1, parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1);
-      const impuesto = Math.max(0, parseFloat(document.getElementById("prodImpuesto").value) || 0);
-      const ganancia = parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0;
-      const tasa = tasaBCVActual > 0 ? tasaBCVActual : 1;
+    // CALCULAR DEUDA POR VENTA
+    function calcularDeudaPendiente(idVenta, totalUSD) {
+      const abonosVenta = dbAbonos.filter(a => (a.idVenta || "").toString().trim() === idVenta.toString().trim());
+      const totalAbonado = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
+      return Math.max(0, Number(totalUSD || 0) - totalAbonado);
+    }
 
-      const CostoxEmp_Impuesto = costo * (1 + (impuesto / 100));
-      let costoDivisaxUnid = (moneda === "Divisas") ? (CostoxEmp_Impuesto / unidades) : ((CostoxEmp_Impuesto / unidades) / tasa);
+    function calcularTotalAbonadoVenta(idVenta) {
+      const abonosVenta = dbAbonos.filter(a => (a.idVenta || "").toString().trim() === idVenta.toString().trim());
+      return abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
+    }
 
-      let PrecioVtaSugeridoDivisa = 0;
-      if (ganancia < 100 && ganancia >= 0) {
-        const factor = 1 - (ganancia / 100);
-        PrecioVtaSugeridoDivisa = factor > 0 ? (costoDivisaxUnid / factor) : costoDivisaxUnid;
+    // ==========================================================
+    // RENDER TABLA DE COBRANZAS CON FILTRO DE FECHAS Y TOTAL ACUMULADO
+    // ==========================================================
+    function renderTablaCobranza() {
+      const tbody = document.getElementById("tablaCobranzaBody");
+      const filtro = (document.getElementById("filtroCobranza").value || "").toLowerCase().trim();
+      const fechaInicioVal = document.getElementById("filtroCobranzaFechaInicio").value;
+      const fechaFinVal = document.getElementById("filtroCobranzaFechaFin").value;
+
+      let fechaInicio = null;
+      let fechaFin = null;
+      if (fechaInicioVal) {
+        const [a, m, d] = fechaInicioVal.split("-").map(Number);
+        fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
+      }
+      if (fechaFinVal) {
+        const [a, m, d] = fechaFinVal.split("-").map(Number);
+        fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
+      }
+
+      // Todas las ventas a crédito
+      const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito");
+
+      // Filtrar créditos activos
+      const creditosConDeuda = todosCreditos.map(venta => {
+        const deudaRestanteUSD = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
+        const totalAbonadoUSD = calcularTotalAbonadoVenta(venta.idVenta);
+        return {
+          ...venta,
+          deudaUSD: deudaRestanteUSD,
+          deudaBS: deudaRestanteUSD * tasaBCVActual,
+          abonadoUSD: totalAbonadoUSD
+        };
+      });
+
+      // Cálculo del SALDO GENERAL (Sin filtros)
+      const deudaGeneralUSD = creditosConDeuda.reduce((acc, c) => acc + c.deudaUSD, 0);
+      const deudaGeneralBS = deudaGeneralUSD * tasaBCVActual;
+
+      // Actualizar badge en header nav si existe
+      const badgeNav = document.getElementById("badgeDeudaNav");
+      if (badgeNav) {
+        if (deudaGeneralUSD > 0) {
+          badgeNav.innerText = "$" + deudaGeneralUSD.toFixed(2);
+          badgeNav.classList.remove("hidden");
+        } else {
+          badgeNav.classList.add("hidden");
+        }
+      }
+
+      // Aplicar filtros de búsqueda y fechas
+      const creditosFiltrados = creditosConDeuda.filter(c => {
+        if (c.deudaUSD <= 0.001) return false; // Solo pendientes
+
+        const coincideTexto = !filtro || 
+          c.idVenta.toLowerCase().includes(filtro) || 
+          (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro)) ||
+          (c.clienteId && c.clienteId.toLowerCase().includes(filtro));
+
+        let coincideFecha = true;
+        if (fechaInicio || fechaFin) {
+          const fObj = parsearFechaVenta(c.fecha);
+          if (fObj) {
+            if (fechaInicio && fObj < fechaInicio) coincideFecha = false;
+            if (fechaFin && fObj > fechaFin) coincideFecha = false;
+          }
+        }
+        return coincideTexto && coincideFecha;
+      });
+
+      // Totales de la búsqueda/filtro actual
+      const totalFiltradoUSD = creditosFiltrados.reduce((acc, c) => acc + c.deudaUSD, 0);
+      const totalFiltradoBS = totalFiltradoUSD * tasaBCVActual;
+
+      // Actualizar Tarjeta de Resumen (General vs Cliente Buscado)
+      const badgeTipo = document.getElementById("badgeTipoCobranza");
+      const subtitulo = document.getElementById("subtituloCobranza");
+      const tituloResumen = document.getElementById("tituloResumenCobranza");
+      const descResumen = document.getElementById("descResumenCobranza");
+      const txtTotalUSD = document.getElementById("totalCobranzaUSD");
+      const txtTotalBS = document.getElementById("totalCobranzaBS");
+
+      const hayFiltroActivo = Boolean(filtro || fechaInicioVal || fechaFinVal);
+
+      if (hayFiltroActivo) {
+        // Obtenemos nombres de clientes únicos en el resultado
+        const clientesSet = new Set(creditosFiltrados.map(c => c.clienteNombre || 'Cliente'));
+        const listaClientes = Array.from(clientesSet);
+
+        badgeTipo.className = "bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+        badgeTipo.innerText = "FILTRO ACTIVO";
+        subtitulo.innerText = creditosFiltrados.length + " ticket(s) pendiente(s)";
+
+        if (listaClientes.length === 1) {
+          tituloResumen.innerHTML = "<span>Saldo Acumulado: <strong>" + listaClientes[0] + "</strong></span>";
+        } else {
+          tituloResumen.innerHTML = "<span>Total Acumulado de Resultados Filtrados</span>";
+        }
+
+        descResumen.innerText = "Suma de deudas pendientes para la búsqueda '" + (filtro || 'Rango de fechas') + "'.";
+        txtTotalUSD.innerText = "$" + totalFiltradoUSD.toFixed(2);
+        txtTotalBS.innerText = formatearBS(totalFiltradoBS);
       } else {
-        PrecioVtaSugeridoDivisa = costoDivisaxUnid * (1 + (ganancia / 100));
+        // SALDO PENDIENTE GENERAL (Sin filtros)
+        badgeTipo.className = "bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+        badgeTipo.innerText = "SALDO PENDIENTE GENERAL";
+        subtitulo.innerText = "Estado global de deudas";
+        tituloResumen.innerHTML = "<span>Cuentas por Cobrar (Créditos)</span>";
+        descResumen.innerText = "Suma total acumulada de saldos pendientes de todos los clientes a tasa oficial BCV.";
+        txtTotalUSD.innerText = "$" + deudaGeneralUSD.toFixed(2);
+        txtTotalBS.innerText = formatearBS(deudaGeneralBS);
       }
 
-      document.getElementById("prodPrecioSugerido").value = PrecioVtaSugeridoDivisa.toFixed(2);
-      const inputReal = document.getElementById("prodPrecioRealDivisas");
-      if (!inputReal.value || !modoEdicionProd) {
-        inputReal.value = PrecioVtaSugeridoDivisa.toFixed(2);
+      // Llenar tabla
+      if (creditosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">No hay deudas pendientes para esta búsqueda o fecha.</td></tr>';
+        return;
       }
-      recalcularPrecioBsDesdeReal();
+
+      tbody.innerHTML = creditosFiltrados.map(v => `
+        <tr class="hover:bg-blue-50 border-b transition">
+          <td class="p-3 font-mono font-bold text-blue-700">${v.idVenta}</td>
+          <td class="p-3 text-gray-600 whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+          <td class="p-3">
+            <div class="font-bold text-gray-800">${v.clienteNombre || 'Cliente'}</div>
+            <div class="text-[10px] text-gray-400 font-mono">${v.clienteId || ''}</div>
+          </td>
+          <td class="p-3 text-right font-medium text-gray-700">$${Number(v.totalUSD).toFixed(2)}</td>
+          <td class="p-3 text-right font-medium text-emerald-700">$${v.abonadoUSD.toFixed(2)}</td>
+          <td class="p-3 text-right font-black text-red-600 bg-red-50/40 text-sm">$${v.deudaUSD.toFixed(2)}</td>
+          <td class="p-3 text-right font-black text-emerald-700 bg-emerald-50/40 whitespace-nowrap text-sm">${formatearBS(v.deudaBS)}</td>
+          <td class="p-3 text-center">
+            <button onclick="abrirModalAbono('${v.idVenta}', ${v.deudaUSD})" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-3 py-1.5 rounded-lg shadow font-bold text-xs cursor-pointer transition">
+              ➕ Abonar
+            </button>
+          </td>
+        </tr>
+      `).join('');
     }
 
-    function recalcularPrecioBsDesdeReal() {
-      const precioRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0;
-      const precioBs = precioRealUSD * tasaBCVActual;
-      document.getElementById("prodPrecioBs").value = precioBs.toFixed(2);
+    function limpiarFiltrosCobranza() {
+      document.getElementById("filtroCobranza").value = "";
+      document.getElementById("filtroCobranzaFechaInicio").value = "";
+      document.getElementById("filtroCobranzaFechaFin").value = "";
+      renderTablaCobranza();
     }
 
-    async function guardarProducto(e) {
+    function cambiarMonedaAbono() {
+      const moneda = document.getElementById("abonoMoneda").value;
+      const labelTitulo = document.getElementById("labelMontoTitulo");
+      const inputMonto = document.getElementById("abonoMontoIngresado");
+      
+      if (moneda === "BS") {
+        const deudaBS = deudaAbonoActualUSD * tasaBCVActual;
+        labelTitulo.textContent = "Monto Bs (Bs):";
+        inputMonto.max = deudaBS.toFixed(2);
+        inputMonto.placeholder = "Ej: " + deudaBS.toFixed(2);
+      } else {
+        labelTitulo.textContent = "Monto USD ($):";
+        inputMonto.max = deudaAbonoActualUSD.toFixed(2);
+        inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
+      }
+    }
+
+    function abrirModalAbono(idVenta, deudaRestante) {
+      document.getElementById("abonoIdVenta").value = idVenta;
+      deudaAbonoActualUSD = Number(deudaRestante);
+      const deudaRestanteBS = deudaAbonoActualUSD * tasaBCVActual;
+
+      document.getElementById("abonoDeudaUSD").innerText = "$" + deudaAbonoActualUSD.toFixed(2);
+      document.getElementById("abonoDeudaBS").innerText = deudaRestanteBS.toFixed(2) + " Bs";
+      document.getElementById("abonoMoneda").value = "USD";
+      document.getElementById("labelMontoTitulo").textContent = "Monto USD ($):";
+      
+      const inputMonto = document.getElementById("abonoMontoIngresado");
+      inputMonto.value = "";
+      inputMonto.max = deudaAbonoActualUSD.toFixed(2);
+      inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
+      document.getElementById("abonoReferencia").value = "";
+      document.getElementById("modalAbono").classList.remove("hidden");
+    }
+
+    function cerrarModalAbono() {
+      document.getElementById("modalAbono").classList.add("hidden");
+    }
+
+    async function guardarAbono(e) {
       e.preventDefault();
-      const btn = document.getElementById("btnSubmitProd");
+      const btn = document.getElementById("btnSubmitAbono");
       btn.disabled = true;
-      btn.innerHTML = "<span>⏳ Guardando...</span>";
+      btn.innerHTML = "⏳ Guardando...";
+
+      const montoIngresado = parseFloat(document.getElementById("abonoMontoIngresado").value);
+      const monedaSeleccionada = document.getElementById("abonoMoneda").value;
+      let montoFinalUSD = monedaSeleccionada === "BS" ? montoIngresado / tasaBCVActual : montoIngresado;
 
       const payload = {
-        action: modoEdicionProd ? "actualizarProducto" : "registrarProducto",
-        producto: {
-          codigo: document.getElementById("prodCodigo").value.trim(),
-          nombre: document.getElementById("prodNombre").value.trim(),
-          incluir_Costo_en_Bs_o_Divisas: document.getElementById("prodMonedaCosto").value,
-          costo: parseFloat(document.getElementById("prodCosto").value) || 0,
-          unidadesxEmpaque: parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1,
-          impuesto: parseFloat(document.getElementById("prodImpuesto").value) || 0,
-          porcentajeGanar: parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0,
-          precioVtaRealDivisas: parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0,
-          precio: parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0,
-          precioBs: parseFloat(document.getElementById("prodPrecioBs").value) || 0,
-          stock: parseFloat(document.getElementById("prodStock").value) || 0
+        action: "registrarAbono",
+        abono: {
+          idVenta: document.getElementById("abonoIdVenta").value,
+          montoUSD: montoFinalUSD,
+          referencia: document.getElementById("abonoReferencia").value,
+          usuario: usuarioActual ? usuarioActual.nombre : "Sistema"
         }
       };
 
       try {
         const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-        const respuesta = await res.json();
-        alert(respuesta.message || "Producto guardado con éxito.");
-        cancelarEdicionProd();
-        await cargarDatos();
-      } catch (err) {
-        alert("Error al registrar producto.");
+        const result = await res.json();
+        if (result.error) alert("Error: " + result.error);
+        else {
+          alert("¡Abono registrado con éxito!");
+          cerrarModalAbono();
+          await cargarDatos();
+        }
+      } catch (error) {
+        alert("Hubo un error de conexión.");
       } finally {
         btn.disabled = false;
-        btn.innerHTML = "💾 Registrar Producto";
+        btn.innerHTML = "💾 Procesar Abono";
       }
     }
 
-    function prepararEdicionProd(codigo) {
-      const p = dbProductos.find(item => item.Codigo.toString() === codigo.toString());
-      if (!p) return;
-      modoEdicionProd = true;
-
-      document.getElementById("prodCodigo").value = p.Codigo;
-      document.getElementById("prodNombre").value = p.Nombre;
-      document.getElementById("prodMonedaCosto").value = p.incluir_Costo_en_Bs_o_Divisas || "Divisas";
-      document.getElementById("prodCosto").value = p.Costo || "";
-      document.getElementById("prodUnidadesEmpaque").value = p.unidadesxEmpaque || 1;
-      document.getElementById("prodImpuesto").value = p.Impuesto || 0;
-      document.getElementById("prodPorcentajeGanar").value = p.Porcentaje_a_Ganar || 30;
-      document.getElementById("prodPrecioRealDivisas").value = p.PrecioVtaRealDivisas || p.Precio || "";
-      document.getElementById("prodStock").value = p.Stock || "";
-
-      document.getElementById("tituloFormProd").innerText = "✏️ Modificar Producto";
-      document.getElementById("btnSubmitProd").innerText = "💾 Guardar Cambios";
-      document.getElementById("btnCancelProd").classList.remove("hidden");
-      recalcularValoresProducto();
-    }
-
-    function cancelarEdicionProd() {
-      modoEdicionProd = false;
-      document.getElementById("prodCodigo").value = "";
-      document.getElementById("prodNombre").value = "";
-      document.getElementById("prodCosto").value = "";
-      document.getElementById("prodStock").value = "";
-      document.getElementById("prodPrecioRealDivisas").value = "";
-      document.getElementById("prodPrecioBs").value = "";
-
-      document.getElementById("tituloFormProd").innerText = "📦 Registrar Producto - iMtec";
-      document.getElementById("btnSubmitProd").innerText = "💾 Registrar Producto";
-      document.getElementById("btnCancelProd").classList.add("hidden");
-    }
-
-    function renderTablasGestionProductos(filtro = "") {
-      const cont = document.getElementById("listaEdicionProductos");
-      const q = filtro.toLowerCase().trim();
-      const prods = dbProductos.filter(p => p.Nombre.toLowerCase().includes(q) || p.Codigo.toLowerCase().includes(q));
-      
-      if (prods.length === 0) {
-        cont.innerHTML = `<div class="text-center text-gray-400 py-4 text-xs">No hay productos</div>`;
-        return;
-      }
-      cont.innerHTML = prods.map(p => `
-        <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
-          <div>
-            <div class="font-bold text-gray-800">${p.Nombre}</div>
-            <div class="text-[10px] text-gray-500">Cód: ${p.Codigo} | Stock: ${p.Stock}</div>
-            <div class="font-bold text-emerald-700 text-xs mt-0.5">$${Number(p.PrecioVtaRealDivisas || p.Precio).toFixed(2)} (${formatearBS(p.PrecioBs)})</div>
-          </div>
-          <div class="flex gap-1">
-            <button onclick="prepararEdicionProd('${p.Codigo}')" class="bg-amber-500 text-white px-2 py-1 rounded-lg">✏️</button>
-            <button onclick="eliminarProducto('${p.Codigo}')" class="bg-red-600 text-white px-2 py-1 rounded-lg">🗑️</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // POS & CARRITO
+    // RESTO DE FUNCIONES POS Y CRUD
     function renderProductos() {
       const grid = document.getElementById("gridProductos");
       document.getElementById("cantProductosLabel").innerText = `${productosFiltrados.length} disponibles`;
@@ -1288,7 +1227,10 @@
         return `
           <div onclick="agregarAlCarrito('${p.Codigo}')" class="border border-gray-200 p-2.5 rounded-xl cursor-pointer hover:border-blue-500 bg-white transition flex flex-col justify-between active:scale-95 shadow-sm">
             <div>
-              <div class="font-bold text-gray-800 text-xs leading-tight mb-1">${p.Nombre}</div>
+              <div class="font-bold text-gray-800 text-xs leading-tight mb-1 flex items-center justify-between gap-1">
+                <span>${p.Nombre}</span>
+                ${p.incluir_Costo_en_Bs_o_Divisas === 'Precio Fijo' ? '<span class="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 font-bold px-1 rounded">🔒 Fijo</span>' : ''}
+              </div>
               <div class="text-[9px] text-gray-400 font-mono">Cód: ${p.Codigo}</div>
             </div>
             <div class="mt-2 border-t pt-1.5 flex flex-col gap-1">
@@ -1315,7 +1257,7 @@
         agregarAlCarrito(prod.Codigo);
         document.getElementById("barcodeInput").value = "";
         filtrarProductos("");
-      } else { alert("Producto no encontrado con el código ingresado."); }
+      } else { alert("Producto no encontrado."); }
     }
 
     function agregarAlCarrito(codigo) {
@@ -1334,31 +1276,11 @@
           codigo: prod.Codigo,
           nombre: prod.Nombre,
           precio: precioUSD,
-          precioBs: precioBs,
+          precioBs,
           cantidad: 1,
           stockMax: parseFloat(prod.Stock)
         });
       }
-      actualizarCarritoUI();
-    }
-
-    function actualizarCantidadManual(idx, valor) {
-      const item = carrito[idx];
-      let cantidad = parseFloat(valor);
-      if (isNaN(cantidad) || cantidad <= 0) {
-        eliminarDelCarrito(idx);
-        return;
-      }
-      if (cantidad > parseFloat(item.stockMax)) {
-        alert(`Stock máximo disponible: ${item.stockMax}`);
-        cantidad = parseFloat(item.stockMax);
-      }
-      item.cantidad = cantidad;
-      actualizarCarritoUI();
-    }
-
-    function eliminarDelCarrito(idx) {
-      carrito.splice(idx, 1);
       actualizarCarritoUI();
     }
 
@@ -1371,9 +1293,7 @@
             <div class="text-[9px] text-emerald-700">${formatearBS(item.precioBs)} c/u</div>
           </td>
           <td class="py-1.5 text-center">
-            <input type="number" min="1" value="${item.cantidad}" 
-                   onchange="actualizarCantidadManual(${idx}, this.value)" 
-                   class="w-12 text-center border rounded p-1 text-xs font-bold">
+            <input type="number" min="1" value="${item.cantidad}" onchange="actualizarCantidadManual(${idx}, this.value)" class="w-12 text-center border rounded p-1 text-xs font-bold">
           </td>
           <td class="py-1.5 text-right font-bold text-emerald-800">${formatearBS(item.precioBs * item.cantidad)}</td>
           <td class="py-1.5 text-center">
@@ -1388,7 +1308,22 @@
       document.getElementById("totalBSText").innerText = formatearBS(totalBS);
     }
 
-    // CLIENTES
+    function actualizarCantidadManual(idx, valor) {
+      let cantidad = parseFloat(valor);
+      if (isNaN(cantidad) || cantidad <= 0) return eliminarDelCarrito(idx);
+      if (cantidad > parseFloat(carrito[idx].stockMax)) {
+        alert(`Stock máximo disponible: ${carrito[idx].stockMax}`);
+        cantidad = parseFloat(carrito[idx].stockMax);
+      }
+      carrito[idx].cantidad = cantidad;
+      actualizarCarritoUI();
+    }
+
+    function eliminarDelCarrito(idx) {
+      carrito.splice(idx, 1);
+      actualizarCarritoUI();
+    }
+
     function filtrarClientesCarrito(termino) {
       const dropdown = document.getElementById("dropClientesCarrito");
       const q = termino.toLowerCase().trim();
@@ -1424,15 +1359,12 @@
       document.getElementById("clienteBuscadorInputDiv").classList.remove("hidden");
     }
 
-    // COBRO CONTADO DISCRIMINADO
     function abrirModalCobro() {
       if (carrito.length === 0) return alert("El carrito está vacío.");
       const totalUSD = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
       const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
-
       document.getElementById("cobroModalTotalBS").innerText = formatearBS(totalBS);
       document.getElementById("cobroModalTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
-
       pagosCobro = [];
       document.getElementById("cobroSelectMetodo").value = "Punto de Venta";
       cambiarMetodoCobroUI();
@@ -1455,8 +1387,7 @@
 
       if (metodo === "Efectivo USD") {
         label.innerText = "Monto ($ USD):";
-        const restanteUSD = tasaBCVActual > 0 ? (restanteBs / tasaBCVActual) : 0;
-        input.value = restanteUSD > 0 ? restanteUSD.toFixed(2) : "";
+        input.value = tasaBCVActual > 0 ? (restanteBs / tasaBCVActual).toFixed(2) : "";
       } else {
         label.innerText = "Monto (Bs.):";
         input.value = restanteBs > 0 ? restanteBs.toFixed(2) : "";
@@ -1468,12 +1399,9 @@
       const inputMonto = document.getElementById("cobroInputMonto");
       const inputRef = document.getElementById("cobroInputRef");
       const montoIngresado = parseFloat(inputMonto.value);
-
       if (isNaN(montoIngresado) || montoIngresado <= 0) return alert("Ingresa un monto válido.");
 
-      let montoBs = 0;
-      let montoUSD = 0;
-
+      let montoBs = 0, montoUSD = 0;
       if (metodo === "Efectivo USD") {
         montoUSD = Number(montoIngresado.toFixed(2));
         montoBs = Number((montoUSD * tasaBCVActual).toFixed(2));
@@ -1482,20 +1410,8 @@
         montoUSD = tasaBCVActual > 0 ? Number((montoBs / tasaBCVActual).toFixed(2)) : 0;
       }
 
-      pagosCobro.push({
-        metodo: metodo,
-        montoBs: montoBs,
-        montoUSD: montoUSD,
-        referencia: inputRef.value.trim() || "-"
-      });
-
+      pagosCobro.push({ metodo, montoBs, montoUSD, referencia: inputRef.value.trim() || "-" });
       inputRef.value = "";
-      cambiarMetodoCobroUI();
-      actualizarCalculosCobro();
-    }
-
-    function eliminarMetodoPagoFila(index) {
-      pagosCobro.splice(index, 1);
       cambiarMetodoCobroUI();
       actualizarCalculosCobro();
     }
@@ -1504,24 +1420,16 @@
       const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
       const totalAbonadoBs = pagosCobro.reduce((acc, p) => acc + p.montoBs, 0);
       const restanteBs = Number((totalBS - totalAbonadoBs).toFixed(2));
-
       if (restanteBs <= 0) return alert("El total ya está cubierto.");
 
       let montoBs = restanteBs;
       let montoUSD = tasaBCVActual > 0 ? Number((montoBs / tasaBCVActual).toFixed(2)) : 0;
-
       if (metodo === "Efectivo USD") {
         montoUSD = tasaBCVActual > 0 ? Number((restanteBs / tasaBCVActual).toFixed(2)) : 0;
         montoBs = Number((montoUSD * tasaBCVActual).toFixed(2));
       }
 
-      pagosCobro.push({
-        metodo: metodo,
-        montoBs: montoBs,
-        montoUSD: montoUSD,
-        referencia: "Total restante"
-      });
-
+      pagosCobro.push({ metodo, montoBs, montoUSD, referencia: "Total restante" });
       cambiarMetodoCobroUI();
       actualizarCalculosCobro();
     }
@@ -1529,25 +1437,19 @@
     function actualizarCalculosCobro() {
       const tbody = document.getElementById("cobroTablaMetodosBody");
       const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
-
-      if (pagosCobro.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-4">No hay pagos añadidos</td></tr>';
-      } else {
-        tbody.innerHTML = pagosCobro.map(function(p, idx) {
-          return `<tr class="border-b">
-            <td class="p-2 font-bold">${p.metodo}</td>
-            <td class="p-2 text-[10px] text-gray-500">${p.referencia}</td>
-            <td class="p-2 text-right font-bold text-emerald-800">${formatearBS(p.montoBs)}</td>
-            <td class="p-2 text-right font-bold text-blue-700">$${p.montoUSD.toFixed(2)}</td>
-            <td class="p-2 text-center"><button onclick="eliminarMetodoPagoFila(${idx})" class="text-red-500 font-bold">✕</button></td>
-          </tr>`;
-        }).join('');
-      }
+      tbody.innerHTML = pagosCobro.map((p, idx) => `
+        <tr class="border-b">
+          <td class="p-2 font-bold">${p.metodo}</td>
+          <td class="p-2 text-[10px] text-gray-500">${p.referencia}</td>
+          <td class="p-2 text-right font-bold text-emerald-800">${formatearBS(p.montoBs)}</td>
+          <td class="p-2 text-right font-bold text-blue-700">$${p.montoUSD.toFixed(2)}</td>
+          <td class="p-2 text-center"><button onclick="pagosCobro.splice(${idx}, 1); actualizarCalculosCobro();" class="text-red-500 font-bold">✕</button></td>
+        </tr>
+      `).join('');
 
       const totalAbonadoBs = pagosCobro.reduce((acc, p) => acc + p.montoBs, 0);
       const totalAbonadoUSD = pagosCobro.reduce((acc, p) => acc + p.montoUSD, 0);
       const diferenciaBs = Number((totalAbonadoBs - totalBS).toFixed(2));
-
       document.getElementById("cobroResumenAbonado").innerText = `${formatearBS(totalAbonadoBs)} ($${totalAbonadoUSD.toFixed(2)})`;
 
       const alertaDiv = document.getElementById("cobroEstadoAlerta");
@@ -1568,7 +1470,6 @@
 
     async function confirmarVentaConPagos() {
       if (carrito.length === 0) return;
-
       const btn = document.getElementById("btnConfirmarVentaFinal");
       btn.disabled = true;
       btn.innerHTML = "<span>⏳ Guardando venta...</span>";
@@ -1583,8 +1484,7 @@
         clienteId: clienteSeleccionadoVenta ? clienteSeleccionadoVenta.ID : null, 
         clienteNombre: clienteSeleccionadoVenta ? clienteSeleccionadoVenta.Nombre : "Cliente General", 
         tipo: "Contado", 
-        totalUSD: totalUSD, 
-        totalBS: totalBS, 
+        totalUSD, totalBS,
         items: [...carrito],
         vendedor: usuarioActual ? usuarioActual.nombre : "Desconocido",
         metodosPago: [...pagosCobro]
@@ -1593,32 +1493,20 @@
       try {
         const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "registrarVenta", venta: ventaTemp }) });
         const data = await res.json();
-        
         if (data.idVenta || data.ventaId) ventaTemp.idVenta = data.idVenta || data.ventaId;
-
         cerrarModalCobro();
-        
-        if (confirm(`¡Venta #${ventaTemp.idVenta} registrada con éxito!\n\n¿Deseas imprimir el ticket térmico?`)) {
-          imprimirTicket(ventaTemp);
-        }
-
+        if (confirm(`¡Venta #${ventaTemp.idVenta} registrada con éxito!\n\n¿Imprimir ticket térmico?`)) imprimirTicket(ventaTemp);
         carrito = [];
         desseleccionarCliente();
         actualizarCarritoUI();
         await cargarDatos();
-      } catch (err) {
-        alert("Error al procesar la venta.");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = "🔒 Completar Venta";
-      }
+      } catch (err) { alert("Error al procesar la venta."); }
+      finally { btn.disabled = false; btn.innerHTML = "🔒 Completar Venta"; }
     }
 
     async function procesarPagoCreditoDirecto() {
       if (carrito.length === 0) return alert("El carrito está vacío");
-      if (!clienteSeleccionadoVenta || !clienteSeleccionadoVenta.ID) {
-        return alert("⚠️ Para ventas a CRÉDITO debes seleccionar un cliente registrado.");
-      }
+      if (!clienteSeleccionadoVenta || !clienteSeleccionadoVenta.ID) return alert("⚠️ Debes seleccionar un cliente para venta a CRÉDITO.");
 
       const totalUSD = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
       const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
@@ -1630,8 +1518,7 @@
         clienteId: clienteSeleccionadoVenta.ID, 
         clienteNombre: clienteSeleccionadoVenta.Nombre, 
         tipo: "Crédito", 
-        totalUSD: totalUSD, 
-        totalBS: totalBS, 
+        totalUSD, totalBS,
         items: [...carrito],
         vendedor: usuarioActual ? usuarioActual.nombre : "Desconocido"
       };
@@ -1640,11 +1527,7 @@
         const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "registrarVenta", venta: ventaTemp }) });
         const data = await res.json();
         if (data.idVenta || data.ventaId) ventaTemp.idVenta = data.idVenta || data.ventaId;
-
-        if (confirm(`¡Venta a crédito #${ventaTemp.idVenta} registrada!\n\n¿Imprimir comprobante?`)) {
-          imprimirTicket(ventaTemp);
-        }
-
+        if (confirm(`¡Venta a crédito #${ventaTemp.idVenta} registrada!\n\n¿Imprimir ticket?`)) imprimirTicket(ventaTemp);
         carrito = [];
         desseleccionarCliente();
         actualizarCarritoUI();
@@ -1652,171 +1535,24 @@
       } catch (err) { alert("Error al registrar crédito."); }
     }
 
-    // COBRANZAS & ABONOS
-    function renderTablaCobranza() {
-      const tbody = document.getElementById("tablaCobranzaBody");
-      const filtro = document.getElementById("filtroCobranza").value.toLowerCase();
-      
-      let creditos = dbVentas.filter(v => v.tipo === "Crédito");
-
-      if(filtro) {
-        creditos = creditos.filter(c => 
-          c.idVenta.toLowerCase().includes(filtro) || 
-          (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro))
-        );
-      }
-
-      function calcularDeudaPendiente(idVenta, totalUSD) {
-        const abonosVenta = dbAbonos.filter(a => a.idVenta === idVenta);
-        const totalAbonado = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD), 0);
-        return Math.max(0, totalUSD - totalAbonado);
-      }
-
-      tbody.innerHTML = creditos.map(venta => {
-        const deudaRestante = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
-        if (deudaRestante <= 0) return '';
-
-        return `
-          <tr class="hover:bg-gray-50 border-b">
-            <td class="p-3 font-bold text-gray-800">${venta.idVenta}</td>
-            <td class="p-3">${formatearFechaLatina(venta.fecha)}</td>
-            <td class="p-3 font-bold">${venta.clienteNombre}</td>
-            <td class="p-3 text-right font-black text-red-600">$${deudaRestante.toFixed(2)}</td>
-            <td class="p-3 text-center">
-              <button onclick="abrirModalAbono('${venta.idVenta}', ${deudaRestante})" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg shadow font-bold text-[10px] cursor-pointer">
-                ➕ Abonar
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function cambiarMonedaAbono() {
-      const moneda = document.getElementById("abonoMoneda").value;
-      const labelTitulo = document.getElementById("labelMontoTitulo");
-      const inputMonto = document.getElementById("abonoMontoIngresado");
-      
-      if (moneda === "BS") {
-        const deudaBS = deudaAbonoActualUSD * tasaBCVActual;
-        labelTitulo.textContent = "Monto Bs (Bs):";
-        inputMonto.max = deudaBS.toFixed(2);
-        inputMonto.placeholder = "Ej: " + deudaBS.toFixed(2);
-      } else {
-        labelTitulo.textContent = "Monto USD ($):";
-        inputMonto.max = deudaAbonoActualUSD.toFixed(2);
-        inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
-      }
-    }
-
-    function abrirModalAbono(idVenta, deudaRestante) {
-      document.getElementById("abonoIdVenta").value = idVenta;
-      deudaAbonoActualUSD = Number(deudaRestante);
-
-      const deudaRestanteBS = deudaAbonoActualUSD * tasaBCVActual;
-
-      document.getElementById("abonoDeudaUSD").innerText = "$" + deudaAbonoActualUSD.toFixed(2);
-      document.getElementById("abonoDeudaBS").innerText = deudaRestanteBS.toFixed(2) + " Bs";
-
-      document.getElementById("abonoMoneda").value = "USD";
-      document.getElementById("labelMontoTitulo").textContent = "Monto USD ($):";
-      
-      const inputMonto = document.getElementById("abonoMontoIngresado");
-      inputMonto.value = "";
-      inputMonto.max = deudaAbonoActualUSD.toFixed(2);
-      inputMonto.placeholder = "Ej: " + deudaAbonoActualUSD.toFixed(2);
-
-      document.getElementById("abonoReferencia").value = "";
-      document.getElementById("modalAbono").classList.remove("hidden");
-    }
-
-    function cerrarModalAbono() {
-      document.getElementById("modalAbono").classList.add("hidden");
-    }
-
-    async function guardarAbono(e) {
-      e.preventDefault();
-      const btn = document.getElementById("btnSubmitAbono");
-      btn.disabled = true;
-      btn.innerHTML = "⏳ Guardando...";
-
-      const montoIngresado = parseFloat(document.getElementById("abonoMontoIngresado").value);
-      const monedaSeleccionada = document.getElementById("abonoMoneda").value;
-
-      let montoFinalUSD = montoIngresado;
-      if (monedaSeleccionada === "BS") {
-        montoFinalUSD = montoIngresado / tasaBCVActual;
-      }
-
-      const payload = {
-        action: "registrarAbono",
-        abono: {
-          idVenta: document.getElementById("abonoIdVenta").value,
-          montoUSD: montoFinalUSD,
-          referencia: document.getElementById("abonoReferencia").value,
-          usuario: usuarioActual.nombre
-        }
-      };
-
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        
-        if (result.error) {
-          alert("Error: " + result.error);
-        } else {
-          alert("¡Abono registrado con éxito!");
-          cerrarModalAbono();
-          await cargarDatos();
-        }
-      } catch (error) {
-        alert("Hubo un error de conexión.");
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = "💾 Procesar Abono";
-      }
-    }
-
-    // IMPRESIÓN
     function imprimirTicket(venta) {
       document.getElementById("tTktNumero").innerText = venta.idVenta || "N/A";
       document.getElementById("tTktFecha").innerText = formatearFechaLatina(venta.fecha || new Date());
       document.getElementById("tTktVendedor").innerText = venta.vendedor || "Desconocido";
       document.getElementById("tTktCliente").innerText = venta.clienteNombre || "Cliente General";
       document.getElementById("tTktTipo").innerText = venta.tipo || "Contado";
-
-      document.getElementById("tTktTotalUSD").innerText = "$" + Number(venta.totalUSD || venta.total || 0).toFixed(2);
+      document.getElementById("tTktTotalUSD").innerText = "$" + Number(venta.totalUSD || 0).toFixed(2);
       document.getElementById("tTktTotalBS").innerText = formatearBS(venta.totalBS || 0);
 
       let itemsHtml = "";
       if (venta.items && Array.isArray(venta.items) && venta.items.length > 0) {
         itemsHtml = venta.items.map(i => `
-          <tr>
-            <td colspan="2" style="padding-top: 2px; font-weight: bold;">${i.nombre || i.codigo}</td>
-          </tr>
-          <tr>
-            <td style="color: #444;">${i.cantidad} x ${formatearBS(i.precioBs || (i.precio * tasaBCVActual))}</td>
-            <td style="text-align: right; vertical-align: top;">${formatearBS((i.precioBs || (i.precio * tasaBCVActual)) * i.cantidad)}</td>
-          </tr>
+          <tr><td colspan="2" style="padding-top: 2px; font-weight: bold;">${i.nombre || i.codigo}</td></tr>
+          <tr><td style="color: #444;">${i.cantidad} x ${formatearBS(i.precioBs)}</td><td style="text-align: right;">${formatearBS(i.precioBs * i.cantidad)}</td></tr>
         `).join('');
       } else {
         itemsHtml = `<tr><td colspan="2">${venta.detalle || 'Detalle de venta'}</td></tr>`;
       }
-
-      if (venta.desglosePago && venta.desglosePago.trim() !== "") {
-        itemsHtml += `
-          <tr>
-            <td colspan="2" style="border-top: 1px dashed #000; padding-top: 4px; padding-bottom: 2px; font-size: 8px; color: #111;">
-              <strong>Formas de Pago:</strong><br>
-              ${venta.desglosePago}
-            </td>
-          </tr>
-        `;
-      }
-
       document.getElementById("tTktItemsBody").innerHTML = itemsHtml;
       const container = document.getElementById("ticketTermicoContainer");
       container.classList.remove("hidden");
@@ -1833,10 +1569,7 @@
     function renderTablasGestionVentas() {
       const tbody = document.getElementById("tablaVentasBody");
       if (!tbody) return;
-
-      if (!ventasFiltradas || ventasFiltradas.length === 0) {
-        ventasFiltradas = [...dbVentas];
-      }
+      if (!ventasFiltradas || ventasFiltradas.length === 0) ventasFiltradas = [...dbVentas];
 
       const totalUSD = ventasFiltradas.reduce((acc, v) => acc + (Number(v.totalUSD) || 0), 0);
       const totalBS = ventasFiltradas.reduce((acc, v) => acc + (Number(v.totalBS) || 0), 0);
@@ -1850,88 +1583,51 @@
       document.getElementById("resumenCredito").innerText = `Crédito: ${cantCredito}`;
 
       if (ventasFiltradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400">No hay ventas en este rango o búsqueda</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400">No hay ventas registradas</td></tr>';
         return;
       }
 
-      tbody.innerHTML = ventasFiltradas.map(v => {
-        let desgloseHtml = '<span class="text-gray-400 italic text-[10px]">Sin desglose</span>';
-        if (v.desglosePago && v.desglosePago.trim() !== "") {
-          const metodos = v.desglosePago.split('|');
-          desgloseHtml = `<div class="flex flex-col gap-1 max-w-xs">` + 
-            metodos.map(m => `
-              <span class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded text-[10px] font-medium inline-block">
-                💳 ${m.trim()}
-              </span>
-            `).join('') + 
-          `</div>`;
-        } else if (v.tipo === "Crédito") {
-          desgloseHtml = `<span class="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold">Pendiente por cobrar</span>`;
-        }
-
-        return `
-          <tr class="hover:bg-blue-50 border-b">
-            <td class="p-2.5 font-mono font-bold text-blue-700">${v.idVenta}</td>
-            <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
-            <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
-            <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
-            <td class="p-2.5 text-center">
-              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-                ${v.tipo}
-              </span>
-            </td>
-            <td class="p-2.5">${desgloseHtml}</td>
-            <td class="p-2.5 text-right font-bold text-gray-900">$${Number(v.totalUSD).toFixed(2)}</td>
-            <td class="p-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">${formatearBS(v.totalBS)}</td>
-            <td class="p-2.5 text-center">
-              <button onclick="imprimirTicketPorId('${v.idVenta}')" title="Reimprimir Ticket" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer shadow">
-                🖨️
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = ventasFiltradas.map(v => `
+        <tr class="hover:bg-blue-50 border-b">
+          <td class="p-2.5 font-mono font-bold text-blue-700">${v.idVenta}</td>
+          <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+          <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
+          <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
+          <td class="p-2.5 text-center">
+            <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${v.tipo}</span>
+          </td>
+          <td class="p-2.5 text-[11px] text-gray-600">${v.desglosePago || (v.tipo === 'Crédito' ? 'Pendiente por cobrar' : 'Contado')}</td>
+          <td class="p-2.5 text-right font-bold text-gray-900">$${Number(v.totalUSD).toFixed(2)}</td>
+          <td class="p-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">${formatearBS(v.totalBS)}</td>
+          <td class="p-2.5 text-center">
+            <button onclick="imprimirTicketPorId('${v.idVenta}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">🖨️</button>
+          </td>
+        </tr>
+      `).join('');
     }
 
     function filtrarVentas() {
       const texto = (document.getElementById("filtroTextoVentas").value || "").toLowerCase().trim();
       const tipo = document.getElementById("filtroTipoVenta").value;
-      const fechaInicioVal = document.getElementById("filtroFechaInicio").value;
-      const fechaFinVal = document.getElementById("filtroFechaFin").value;
+      const fIni = document.getElementById("filtroFechaInicio").value;
+      const fFin = document.getElementById("filtroFechaFin").value;
 
-      let fechaInicio = null;
-      let fechaFin = null;
-
-      if (fechaInicioVal) {
-        const [a, m, d] = fechaInicioVal.split("-").map(Number);
-        fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
-      }
-
-      if (fechaFinVal) {
-        const [a, m, d] = fechaFinVal.split("-").map(Number);
-        fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
-      }
+      let dIni = fIni ? new Date(fIni.split("-")[0], fIni.split("-")[1] - 1, fIni.split("-")[2], 0,0,0) : null;
+      let dFin = fFin ? new Date(fFin.split("-")[0], fFin.split("-")[1] - 1, fFin.split("-")[2], 23,59,59) : null;
 
       ventasFiltradas = dbVentas.filter(v => {
-        const cumpleTipo = (tipo === "todos") || (v.tipo && v.tipo.toLowerCase() === tipo.toLowerCase());
-        const cumpleTexto = !texto || 
-          (v.idVenta || "").toLowerCase().includes(texto) ||
-          (v.clienteNombre || "").toLowerCase().includes(texto) ||
-          (v.vendedor || "").toLowerCase().includes(texto) ||
-          (v.desglosePago || "").toLowerCase().includes(texto);
-
-        let cumpleFecha = true;
-        if (fechaInicio || fechaFin) {
-          const fechaVentaObj = parsearFechaVenta(v.fecha);
-          if (fechaVentaObj) {
-            if (fechaInicio && fechaVentaObj < fechaInicio) cumpleFecha = false;
-            if (fechaFin && fechaVentaObj > fechaFin) cumpleFecha = false;
+        const cTipo = tipo === "todos" || v.tipo.toLowerCase() === tipo.toLowerCase();
+        const cTexto = !texto || (v.idVenta || "").toLowerCase().includes(texto) || (v.clienteNombre || "").toLowerCase().includes(texto) || (v.vendedor || "").toLowerCase().includes(texto);
+        let cFecha = true;
+        if (dIni || dFin) {
+          const fObj = parsearFechaVenta(v.fecha);
+          if (fObj) {
+            if (dIni && fObj < dIni) cFecha = false;
+            if (dFin && fObj > dFin) cFecha = false;
           }
         }
-
-        return cumpleTipo && cumpleTexto && cumpleFecha;
+        return cTipo && cTexto && cFecha;
       });
-
       renderTablasGestionVentas();
     }
 
@@ -1941,7 +1637,184 @@
       filtrarVentas();
     }
 
-    // CRUD CLIENTES Y USUARIOS
+    // CRUD PRODUCTOS / CLIENTES / USUARIOS
+    function recalcularValoresProducto() {
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      const costo = Math.max(0, parseFloat(document.getElementById("prodCosto").value) || 0);
+      const unidades = Math.max(1, parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1);
+      const impuesto = Math.max(0, parseFloat(document.getElementById("prodImpuesto").value) || 0);
+      const ganancia = parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0;
+      const tasa = tasaBCVActual > 0 ? tasaBCVActual : 1;
+
+      const labelCosto = document.getElementById("labelProdCosto");
+      const bannerFijo = document.getElementById("bannerPrecioFijoInfo");
+      const badgeEditable = document.getElementById("badgeFijoEditable");
+      const inputBs = document.getElementById("prodPrecioBs");
+
+      if (labelCosto) labelCosto.innerText = moneda === "Divisas" ? "Costo Base ($):" : "Costo Base (Bs):";
+      
+      if (moneda === "Precio Fijo") {
+        if (bannerFijo) bannerFijo.classList.remove("hidden");
+        if (badgeEditable) badgeEditable.classList.remove("hidden");
+        if (inputBs) {
+          inputBs.readOnly = false;
+          inputBs.className = "w-full border-2 border-amber-500 p-1.5 rounded-lg text-xs font-black text-amber-950 bg-white";
+        }
+      } else {
+        if (bannerFijo) bannerFijo.classList.add("hidden");
+        if (badgeEditable) badgeEditable.classList.add("hidden");
+        if (inputBs) {
+          inputBs.readOnly = true;
+          inputBs.className = "w-full border border-emerald-300 p-1.5 rounded-lg text-xs font-black text-emerald-800 bg-emerald-100";
+        }
+      }
+
+      const CostoxEmp_Impuesto = costo * (1 + (impuesto / 100));
+
+      if (moneda === "Precio Fijo") {
+        const costoBsxUnid = CostoxEmp_Impuesto / unidades;
+        let sugBs = ganancia < 100 && ganancia >= 0 ? (costoBsxUnid / (1 - ganancia / 100)) : costoBsxUnid * (1 + ganancia / 100);
+        let sugDivisa = tasa > 0 ? sugBs / tasa : sugBs;
+        document.getElementById("prodPrecioSugerido").value = sugDivisa.toFixed(2);
+
+        if (!modoEdicionProd || !document.getElementById("prodPrecioBs").value) {
+          document.getElementById("prodPrecioBs").value = sugBs.toFixed(2);
+          document.getElementById("prodPrecioRealDivisas").value = sugDivisa.toFixed(2);
+        }
+      } else {
+        let costoDivisaxUnid = (moneda === "Divisas") ? (CostoxEmp_Impuesto / unidades) : ((CostoxEmp_Impuesto / unidades) / tasa);
+        let PrecioVtaSugeridoDivisa = ganancia < 100 && ganancia >= 0 ? (costoDivisaxUnid / (1 - ganancia / 100)) : costoDivisaxUnid * (1 + ganancia / 100);
+
+        document.getElementById("prodPrecioSugerido").value = PrecioVtaSugeridoDivisa.toFixed(2);
+        const inputReal = document.getElementById("prodPrecioRealDivisas");
+        if (!inputReal.value || !modoEdicionProd) inputReal.value = PrecioVtaSugeridoDivisa.toFixed(2);
+        recalcularPrecioBsDesdeReal();
+      }
+    }
+
+    function recalcularPrecioBsDesdeReal() {
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      const precioRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0;
+      if (moneda !== "Precio Fijo") {
+        document.getElementById("prodPrecioBs").value = (precioRealUSD * tasaBCVActual).toFixed(2);
+      }
+    }
+
+    function recalcularPrecioUSDDesdeBs() {
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      if (moneda === "Precio Fijo") {
+        const precioBs = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+        const tasa = tasaBCVActual > 0 ? tasaBCVActual : 1;
+        document.getElementById("prodPrecioRealDivisas").value = (precioBs / tasa).toFixed(2);
+      }
+    }
+
+    async function guardarProducto(e) {
+      e.preventDefault();
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      let pRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0;
+      let pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+
+      if (moneda === "Precio Fijo") {
+        pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+        pRealUSD = tasaBCVActual > 0 ? pBsFinal / tasaBCVActual : pRealUSD;
+      } else {
+        pBsFinal = pRealUSD * tasaBCVActual;
+      }
+
+      const payload = {
+        action: modoEdicionProd ? "actualizarProducto" : "registrarProducto",
+        producto: {
+          codigo: document.getElementById("prodCodigo").value.trim(),
+          nombre: document.getElementById("prodNombre").value.trim(),
+          incluir_Costo_en_Bs_o_Divisas: moneda,
+          costo: parseFloat(document.getElementById("prodCosto").value) || 0,
+          unidadesxEmpaque: parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1,
+          impuesto: parseFloat(document.getElementById("prodImpuesto").value) || 0,
+          porcentajeGanar: parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0,
+          precioVtaRealDivisas: Number(pRealUSD.toFixed(2)),
+          precio: Number(pRealUSD.toFixed(2)),
+          precioBs: Number(pBsFinal.toFixed(2)),
+          stock: parseFloat(document.getElementById("prodStock").value) || 0
+        }
+      };
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+      cancelarEdicionProd();
+      await cargarDatos();
+    }
+
+    function prepararEdicionProd(codigo) {
+      const p = dbProductos.find(item => item.Codigo.toString() === codigo.toString());
+      if (!p) return;
+      modoEdicionProd = true;
+      document.getElementById("prodCodigo").value = p.Codigo;
+      document.getElementById("prodNombre").value = p.Nombre;
+      const mon = p.incluir_Costo_en_Bs_o_Divisas || "Divisas";
+      document.getElementById("prodMonedaCosto").value = mon;
+      document.getElementById("prodCosto").value = p.Costo || "";
+      document.getElementById("prodUnidadesEmpaque").value = p.unidadesxEmpaque || 1;
+      document.getElementById("prodImpuesto").value = p.Impuesto || 0;
+      document.getElementById("prodPorcentajeGanar").value = p.Porcentaje_a_Ganar || 30;
+      
+      if (mon === "Precio Fijo") {
+        document.getElementById("prodPrecioBs").value = p.PrecioBs || "";
+        const usdCalc = tasaBCVActual > 0 ? (Number(p.PrecioBs || 0) / tasaBCVActual).toFixed(2) : (p.Precio || 0);
+        document.getElementById("prodPrecioRealDivisas").value = usdCalc;
+      } else {
+        document.getElementById("prodPrecioRealDivisas").value = p.PrecioVtaRealDivisas || p.Precio || "";
+        document.getElementById("prodPrecioBs").value = (Number(p.PrecioVtaRealDivisas || p.Precio || 0) * tasaBCVActual).toFixed(2);
+      }
+
+      document.getElementById("prodStock").value = p.Stock || "";
+      document.getElementById("tituloFormProd").innerText = "✏️ Modificar Producto";
+      document.getElementById("btnSubmitProd").innerText = "💾 Guardar Cambios";
+      document.getElementById("btnCancelProd").classList.remove("hidden");
+      recalcularValoresProducto();
+    }
+
+    function cancelarEdicionProd() {
+      modoEdicionProd = false;
+      document.getElementById("prodCodigo").value = "";
+      document.getElementById("prodNombre").value = "";
+      document.getElementById("prodMonedaCosto").value = "Divisas";
+      document.getElementById("prodCosto").value = "";
+      document.getElementById("prodStock").value = "";
+      document.getElementById("prodPrecioRealDivisas").value = "";
+      document.getElementById("prodPrecioBs").value = "";
+      document.getElementById("tituloFormProd").innerText = "📦 Registrar Producto - iMtec";
+      document.getElementById("btnSubmitProd").innerText = "💾 Registrar Producto";
+      document.getElementById("btnCancelProd").classList.add("hidden");
+      recalcularValoresProducto();
+    }
+
+    function renderTablasGestionProductos(filtro = "") {
+      const cont = document.getElementById("listaEdicionProductos");
+      const q = filtro.toLowerCase().trim();
+      const prods = dbProductos.filter(p => p.Nombre.toLowerCase().includes(q) || p.Codigo.toLowerCase().includes(q));
+      cont.innerHTML = prods.map(p => `
+        <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
+          <div>
+            <div class="font-bold text-gray-800 flex items-center gap-1.5 flex-wrap">
+              <span>${p.Nombre}</span>
+              ${p.incluir_Costo_en_Bs_o_Divisas === 'Precio Fijo' ? '<span class="bg-amber-100 text-amber-900 text-[9px] font-bold px-1.5 py-0.2 rounded border border-amber-300">🔒 Precio Fijo</span>' : ''}
+            </div>
+            <div class="text-[10px] text-gray-500">Cód: ${p.Codigo} | Stock: ${p.Stock}</div>
+            <div class="font-bold text-emerald-700 text-xs mt-0.5">$${Number(p.PrecioVtaRealDivisas || p.Precio).toFixed(2)} (${formatearBS(p.PrecioBs)})</div>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="prepararEdicionProd('${p.Codigo}')" class="bg-amber-500 text-white px-2 py-1 rounded-lg cursor-pointer">✏️</button>
+            <button onclick="eliminarProducto('${p.Codigo}')" class="bg-red-600 text-white px-2 py-1 rounded-lg cursor-pointer">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function eliminarProducto(codigo) {
+      if (!confirm(`¿Eliminar producto ${codigo}?`)) return;
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarProducto", codigo }) });
+      await cargarDatos();
+    }
+
     async function guardarCliente(e) {
       e.preventDefault();
       const payload = {
@@ -1952,23 +1825,17 @@
           telefono: document.getElementById("cliTelefono").value
         }
       };
-      try {
-        const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-        const respuesta = await res.json();
-        alert(respuesta.message);
-        cancelarEdicionCli();
-        await cargarDatos();
-      } catch (err) { alert("Error al guardar cliente."); }
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+      document.getElementById("cliID").value = "";
+      document.getElementById("cliNombre").value = "";
+      document.getElementById("cliTelefono").value = "";
+      await cargarDatos();
     }
 
     function renderTablasGestionClientes(filtro = "") {
       const cont = document.getElementById("listaEdicionClientes");
       const q = filtro.toLowerCase().trim();
       const clis = dbClientes.filter(c => c.Nombre.toLowerCase().includes(q) || c.ID.toLowerCase().includes(q));
-      if (clis.length === 0) {
-        cont.innerHTML = `<div class="text-center text-gray-400 py-4 text-xs">No hay clientes</div>`;
-        return;
-      }
       cont.innerHTML = clis.map(c => `
         <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
           <div>
@@ -1982,16 +1849,8 @@
 
     async function eliminarCliente(id) {
       if (!confirm(`¿Eliminar cliente ${id}?`)) return;
-      try {
-        await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarCliente", id }) });
-        await cargarDatos();
-      } catch (e) {}
-    }
-
-    function cancelarEdicionCli() {
-      document.getElementById("cliID").value = "";
-      document.getElementById("cliNombre").value = "";
-      document.getElementById("cliTelefono").value = "";
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarCliente", id }) });
+      await cargarDatos();
     }
 
     async function guardarUsuario(e) {
@@ -2005,23 +1864,17 @@
           roll: document.getElementById("userRollSelect").value
         }
       };
-      try {
-        const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-        const respuesta = await res.json();
-        alert(respuesta.message);
-        cancelarEdicionUser();
-        await cargarDatos();
-      } catch (err) { alert("Error al guardar usuario."); }
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+      document.getElementById("userId").value = "";
+      document.getElementById("userNombreInput").value = "";
+      document.getElementById("userPasswordInput").value = "";
+      await cargarDatos();
     }
 
     function renderTablasGestionUsuarios(filtro = "") {
       const cont = document.getElementById("listaEdicionUsuarios");
       const q = filtro.toLowerCase().trim();
       const users = dbUsuarios.filter(u => u.nombre.toLowerCase().includes(q) || u.idusuario.toLowerCase().includes(q));
-      if (users.length === 0) {
-        cont.innerHTML = `<div class="text-center text-gray-400 py-4 text-xs">No hay usuarios</div>`;
-        return;
-      }
       cont.innerHTML = users.map(u => `
         <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
           <div>
@@ -2036,27 +1889,54 @@
 
     async function eliminarUsuario(idusuario) {
       if (!confirm(`¿Eliminar usuario ${idusuario}?`)) return;
+      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarUsuario", idusuario }) });
+      await cargarDatos();
+    }
+
+    async function abrirEscanerCamara(destino = 'pos') {
+      destinoEscaneoActual = destino;
+      const modal = document.getElementById("modalEscanerCamara");
+      modal.classList.remove("hidden");
+      if (!html5QrCodeScanner) html5QrCodeScanner = new Html5Qrcode("readerCamara");
+
       try {
-        await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarUsuario", idusuario }) });
-        await cargarDatos();
-      } catch (e) {}
+        await html5QrCodeScanner.start(
+          { facingMode: "environment" },
+          { fps: 15, qrbox: { width: 250, height: 160 } },
+          (decodedText) => {
+            const codigo = decodedText.trim();
+            if (destinoEscaneoActual === 'inventario') {
+              document.getElementById("prodCodigo").value = codigo;
+              const prodExistente = dbProductos.find(p => p.Codigo.toString().toLowerCase() === codigo.toLowerCase());
+              if (prodExistente) prepararEdicionProd(prodExistente.Codigo);
+              cerrarEscanerCamara();
+            } else {
+              const prod = dbProductos.find(p => p.Codigo.toString().toLowerCase() === codigo.toLowerCase());
+              if (prod) agregarAlCarrito(prod.Codigo);
+              else {
+                document.getElementById("barcodeInput").value = codigo;
+                filtrarProductos(codigo);
+              }
+            }
+          },
+          (error) => {}
+        );
+      } catch (err) {
+        alert("Por favor permite el acceso a la cámara.");
+        cerrarEscanerCamara();
+      }
     }
 
-    async function eliminarProducto(codigo) {
-      if (!confirm(`¿Eliminar producto ${codigo}?`)) return;
-      try {
-        await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarProducto", codigo }) });
-        await cargarDatos();
-      } catch (e) {}
+    async function cerrarEscanerCamara() {
+      if (html5QrCodeScanner) {
+        try {
+          await html5QrCodeScanner.stop();
+          html5QrCodeScanner.clear();
+        } catch (e) {}
+      }
+      document.getElementById("modalEscanerCamara").classList.add("hidden");
     }
 
-    function cancelarEdicionUser() {
-      document.getElementById("userId").value = "";
-      document.getElementById("userNombreInput").value = "";
-      document.getElementById("userPasswordInput").value = "";
-    }
-
-    // Iniciar verificación de sesión
     comprobarSesionExistente();
   </script>
 </body>
