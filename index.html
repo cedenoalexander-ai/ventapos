@@ -275,6 +275,62 @@
           </div>
         </div>
 
+        <!-- Panel Informativo de Ganancias (No persistente en BD) -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50/50 p-3.5 rounded-xl border border-blue-200 shadow-xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+              <span>📊</span>
+              <span>Proyección Informativa de Ganancia</span>
+            </span>
+            <span class="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+              Solo informativo
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Ganancia por Unidad -->
+            <div class="bg-white p-2.5 rounded-lg border border-blue-100 shadow-xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-gray-600 uppercase">Ganancia x Unidad</span>
+                <span class="text-[9px] text-gray-400 font-medium">1 unidad</span>
+              </div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="flex flex-col">
+                  <span class="text-[9px] text-gray-500 font-semibold">En Divisas:</span>
+                  <span id="infoGananciaUnidadUSD" class="text-sm font-black text-emerald-600">+$0.00</span>
+                </div>
+                <div class="flex flex-col text-right">
+                  <span class="text-[9px] text-gray-500 font-semibold">En Bolívares:</span>
+                  <span id="infoGananciaUnidadBs" class="text-xs font-black text-emerald-700">+Bs. 0,00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ganancia por Empaque -->
+            <div class="bg-white p-2.5 rounded-lg border border-blue-100 shadow-xs">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[10px] font-bold text-gray-600 uppercase">Ganancia x Empaque</span>
+                <span id="infoBadgeEmpaque" class="text-[9px] text-indigo-700 bg-indigo-50 font-bold px-1.5 py-0.5 rounded">1 unidad</span>
+              </div>
+              <div class="flex items-baseline justify-between gap-2">
+                <div class="flex flex-col">
+                  <span class="text-[9px] text-gray-500 font-semibold">En Divisas:</span>
+                  <span id="infoGananciaEmpaqueUSD" class="text-sm font-black text-indigo-600">+$0.00</span>
+                </div>
+                <div class="flex flex-col text-right">
+                  <span class="text-[9px] text-gray-500 font-semibold">En Bolívares:</span>
+                  <span id="infoGananciaEmpaqueBs" class="text-xs font-black text-indigo-700">+Bs. 0,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2 pt-2 border-t border-blue-100 flex flex-wrap justify-between items-center text-[10px] text-gray-500">
+            <span>Costo real unitario: <strong id="infoCostoUnitarioUSD">$0.00</strong> (<span id="infoCostoUnitarioBs">Bs. 0,00</span>)</span>
+            <span>Precio venta: <strong id="infoPrecioVentaUSD">$0.00</strong> (<span id="infoPrecioVentaBs">Bs. 0,00</span>)</span>
+          </div>
+        </div>
+
         <div class="flex gap-2 pt-1">
           <button type="submit" id="btnSubmitProd" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow transition text-xs sm:text-sm cursor-pointer">💾 Registrar Producto</button>
           <button type="button" onclick="cancelarEdicionProd()" id="btnCancelProd" class="hidden bg-gray-400 hover:bg-gray-500 text-white font-bold px-4 py-3 rounded-xl transition text-xs cursor-pointer">Cancelar</button>
@@ -334,6 +390,11 @@
             <option value="todos">Todos los pagos</option>
             <option value="Contado">Solo Contado</option>
             <option value="Crédito">Solo Crédito</option>
+          </select>
+          <select id="filtroEstadoVenta" onchange="filtrarVentas()" class="border border-gray-300 p-1.5 rounded-lg text-xs bg-white font-medium">
+            <option value="todas">Todas (Activas y Anuladas)</option>
+            <option value="activas" selected>Solo Activas</option>
+            <option value="anuladas">Solo Anuladas</option>
           </select>
           <button type="button" onclick="limpiarFiltroFechas()" title="Limpiar fechas" class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition">🧹</button>
           <button type="button" onclick="cargarDatos()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">🔄 Actualizar</button>
@@ -761,6 +822,14 @@
       return isNaN(d.getTime()) ? null : d;
     }
 
+    function esFechaDeHoy(fechaStr) {
+      if (!fechaStr) return false;
+      const fv = parsearFechaVenta(fechaStr);
+      if (!fv) return false;
+      const hoy = new Date();
+      return fv.getFullYear() === hoy.getFullYear() && fv.getMonth() === hoy.getMonth() && fv.getDate() === hoy.getDate();
+    }
+
     function obtenerSiguienteCorrelativo() {
       let maxNum = 0;
       dbVentas.forEach(v => {
@@ -903,6 +972,22 @@
         dbVentas = (data.ventas || []).reverse();
         dbAbonos = data.abonos || [];
 
+        // Reconciliar con anulaciones locales persistidas
+        try {
+          const anuladasLocales = JSON.parse(localStorage.getItem('imtec_ventas_anuladas') || '{}');
+          dbVentas.forEach(v => {
+            const idKey = (v.idVenta || '').toString().trim();
+            const idClean = idKey.replace(/^#+/, '').trim();
+            const anInfo = anuladasLocales[idKey] || anuladasLocales[idClean] || anuladasLocales['#' + idClean];
+            if (anInfo && v.estado !== 'Anulada') {
+              v.estado = 'Anulada';
+              v.motivoAnulacion = anInfo.motivo || 'Anulada';
+              v.usuarioAnulacion = anInfo.usuario || 'Admin';
+              v.fechaAnulacion = anInfo.fecha || '';
+            }
+          });
+        } catch (e) {}
+
         if (data.tasaBCV && data.tasaBCV.tasa) {
           tasaBCVActual = Number(data.tasaBCV.tasa);
           actualizarBadgeTasaUI();
@@ -925,7 +1010,7 @@
         renderTablasGestionProductos();
         renderTablasGestionClientes();
         renderTablasGestionUsuarios();
-        renderTablasGestionVentas();
+        filtrarVentas();
         renderTablaCobranza();
         actualizarLabelProximoTicket();
       } catch (err) {
@@ -1010,8 +1095,8 @@
         fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
       }
 
-      // Todas las ventas a crédito
-      const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito");
+      // Todas las ventas a crédito (excluyendo anuladas)
+      const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito" && v.estado !== "Anulada");
 
       // Filtrar créditos activos
       const creditosConDeuda = todosCreditos.map(venta => {
@@ -1569,14 +1654,15 @@
     function renderTablasGestionVentas() {
       const tbody = document.getElementById("tablaVentasBody");
       if (!tbody) return;
-      if (!ventasFiltradas || ventasFiltradas.length === 0) ventasFiltradas = [...dbVentas];
+      if (!ventasFiltradas) ventasFiltradas = [...dbVentas];
 
-      const totalUSD = ventasFiltradas.reduce((acc, v) => acc + (Number(v.totalUSD) || 0), 0);
-      const totalBS = ventasFiltradas.reduce((acc, v) => acc + (Number(v.totalBS) || 0), 0);
-      const cantContado = ventasFiltradas.filter(v => v.tipo === 'Contado').length;
-      const cantCredito = ventasFiltradas.filter(v => v.tipo === 'Crédito').length;
+      const ventasActivas = ventasFiltradas.filter(v => v.estado !== 'Anulada');
+      const totalUSD = ventasActivas.reduce((acc, v) => acc + (Number(v.totalUSD) || 0), 0);
+      const totalBS = ventasActivas.reduce((acc, v) => acc + (Number(v.totalBS) || 0), 0);
+      const cantContado = ventasActivas.filter(v => v.tipo === 'Contado').length;
+      const cantCredito = ventasActivas.filter(v => v.tipo === 'Crédito').length;
 
-      document.getElementById("resumenCantVentas").innerText = ventasFiltradas.length;
+      document.getElementById("resumenCantVentas").innerText = ventasActivas.length;
       document.getElementById("resumenTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
       document.getElementById("resumenTotalBS").innerText = formatearBS(totalBS);
       document.getElementById("resumenContado").innerText = `Contado: ${cantContado}`;
@@ -1587,28 +1673,50 @@
         return;
       }
 
-      tbody.innerHTML = ventasFiltradas.map(v => `
-        <tr class="hover:bg-blue-50 border-b">
-          <td class="p-2.5 font-mono font-bold text-blue-700">${v.idVenta}</td>
+      tbody.innerHTML = ventasFiltradas.map(v => {
+        const esAnulada = v.estado === 'Anulada';
+        const esAdmin = usuarioActual && (usuarioActual.role === 'admin' || usuarioActual.roll === 'admin');
+        const esDeHoy = esFechaDeHoy(v.fecha);
+        const puedeAnular = !esAnulada && esAdmin && esDeHoy;
+
+        let tituloAnular = "Anular Venta y Devolver Stock";
+        if (!esAdmin) tituloAnular = "Solo Administrador puede anular ventas";
+        else if (!esDeHoy) tituloAnular = "Solo se pueden anular ventas del día en curso";
+
+        return `
+        <tr class="hover:bg-blue-50 border-b ${esAnulada ? 'bg-red-50/50 opacity-75' : ''}">
+          <td class="p-2.5 font-mono font-bold ${esAnulada ? 'text-red-700 line-through' : 'text-blue-700'}">
+            ${v.idVenta}
+            ${esAnulada ? '<span class="ml-1 text-[9px] bg-red-100 text-red-700 px-1 rounded font-bold uppercase">Anulada</span>' : ''}
+          </td>
           <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
           <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
           <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
           <td class="p-2.5 text-center">
             <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${v.tipo}</span>
           </td>
-          <td class="p-2.5 text-[11px] text-gray-600">${v.desglosePago || (v.tipo === 'Crédito' ? 'Pendiente por cobrar' : 'Contado')}</td>
-          <td class="p-2.5 text-right font-bold text-gray-900">$${Number(v.totalUSD).toFixed(2)}</td>
-          <td class="p-2.5 text-right font-bold text-emerald-700 whitespace-nowrap">${formatearBS(v.totalBS)}</td>
-          <td class="p-2.5 text-center">
-            <button onclick="imprimirTicketPorId('${v.idVenta}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">🖨️</button>
+          <td class="p-2.5 text-[11px] text-gray-600">
+            ${v.desglosePago || (v.tipo === 'Crédito' ? 'Pendiente por cobrar' : 'Contado')}
+            ${esAnulada && v.motivoAnulacion ? '<div class="text-[10px] text-red-600 font-semibold mt-0.5">Motivo: ' + v.motivoAnulacion + '</div>' : ''}
+          </td>
+          <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-gray-900'}">$${Number(v.totalUSD).toFixed(2)}</td>
+          <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-emerald-700'} whitespace-nowrap">${formatearBS(v.totalBS)}</td>
+          <td class="p-2.5 text-center flex items-center justify-center gap-1">
+            <button onclick="imprimirTicketPorId('${v.idVenta}')" title="Reimprimir Ticket" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer">🖨️</button>
+            ${!esAnulada ? (
+              puedeAnular 
+                ? '<button onclick="anularVentaPorId(\'' + v.idVenta + '\')" title="' + tituloAnular + '" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded text-xs font-bold cursor-pointer transition">✕ Anular</button>'
+                : '<button disabled title="' + tituloAnular + '" class="bg-gray-100 text-gray-400 border border-gray-200 px-2 py-1 rounded text-xs cursor-not-allowed opacity-50">✕ Anular</button>'
+            ) : ''}
           </td>
         </tr>
-      `).join('');
+      `;}).join('');
     }
 
     function filtrarVentas() {
       const texto = (document.getElementById("filtroTextoVentas").value || "").toLowerCase().trim();
       const tipo = document.getElementById("filtroTipoVenta").value;
+      const estadoFiltro = (document.getElementById("filtroEstadoVenta") ? document.getElementById("filtroEstadoVenta").value : "activas");
       const fIni = document.getElementById("filtroFechaInicio").value;
       const fFin = document.getElementById("filtroFechaFin").value;
 
@@ -1618,6 +1726,11 @@
       ventasFiltradas = dbVentas.filter(v => {
         const cTipo = tipo === "todos" || v.tipo.toLowerCase() === tipo.toLowerCase();
         const cTexto = !texto || (v.idVenta || "").toLowerCase().includes(texto) || (v.clienteNombre || "").toLowerCase().includes(texto) || (v.vendedor || "").toLowerCase().includes(texto);
+        
+        let cEstado = true;
+        if (estadoFiltro === "activas") cEstado = v.estado !== "Anulada";
+        else if (estadoFiltro === "anuladas") cEstado = v.estado === "Anulada";
+
         let cFecha = true;
         if (dIni || dFin) {
           const fObj = parsearFechaVenta(v.fecha);
@@ -1626,9 +1739,115 @@
             if (dFin && fObj > dFin) cFecha = false;
           }
         }
-        return cTipo && cTexto && cFecha;
+        return cTipo && cTexto && cEstado && cFecha;
       });
       renderTablasGestionVentas();
+    }
+
+    async function anularVentaPorId(idVenta) {
+      if (!usuarioActual || (usuarioActual.role !== 'admin' && usuarioActual.roll !== 'admin')) {
+        return alert("⚠️ Solo los administradores pueden anular ventas.");
+      }
+      const venta = dbVentas.find(v => (v.idVenta || '').toString().trim() === idVenta.toString().trim());
+      if (!venta) return alert("Venta no encontrada.");
+      if (venta.estado === 'Anulada') return alert("Esta venta ya está anulada.");
+
+      if (!esFechaDeHoy(venta.fecha)) {
+        return alert("⚠️ Acción denegada: Solo se pueden anular ventas realizadas el día de hoy (fecha de sistema en curso).");
+      }
+
+      const motivo = prompt("¿Está seguro de anular la venta " + idVenta + "?\n\nAl anularse se reincorporará el stock vendido al inventario.\n\nIngrese el motivo de la anulación:", "Error en cobro / Devolución");
+      if (motivo === null) return; // Cancelado
+
+      const motivoFinal = motivo.trim() || "Anulada por administrador";
+
+      // 1. Extraer y devolver stock
+      let itemsDevolver = [];
+      if (Array.isArray(venta.items) && venta.items.length > 0) {
+        itemsDevolver = venta.items;
+      } else if (venta.detalle) {
+        const partes = venta.detalle.split(",");
+        partes.forEach(p => {
+          const m = p.trim().match(/^(\d+(?:\.\d+)?)\s*x\s*(.+?)(?:\s*\(\s*\$[\d.]+\s*\))?$/i);
+          if (m) {
+            itemsDevolver.push({ cantidad: parseFloat(m[1]) || 0, nombre: m[2].trim() });
+          }
+        });
+      }
+
+      // Reincorporar stock en dbProductos
+      itemsDevolver.forEach(item => {
+        const pIndex = dbProductos.findIndex(prod => 
+          (item.codigo && prod.Codigo && prod.Codigo.toString() === item.codigo.toString()) ||
+          (prod.Nombre && prod.Nombre.toLowerCase().trim() === (item.nombre || "").toLowerCase().trim())
+        );
+        if (pIndex > -1) {
+          dbProductos[pIndex].Stock = (Number(dbProductos[pIndex].Stock) || 0) + item.cantidad;
+        }
+      });
+
+      // 2. Marcar venta como Anulada en memoria
+      venta.estado = "Anulada";
+      venta.motivoAnulacion = motivoFinal;
+      venta.usuarioAnulacion = (usuarioActual && usuarioActual.nombre) || "Admin";
+      venta.fechaAnulacion = new Date().toLocaleString('es-VE');
+
+      // Guardar en persistencia local de anulaciones para no perderse al recargar/actualizar
+      try {
+        const anuladasLocales = JSON.parse(localStorage.getItem('imtec_ventas_anuladas') || '{}');
+        const idKey = (venta.idVenta || idVenta || '').toString().trim();
+        const idClean = idKey.replace(/^#+/, '').trim();
+        anuladasLocales[idKey] = {
+          motivo: motivoFinal,
+          usuario: (usuarioActual && usuarioActual.nombre) || "Admin",
+          fecha: venta.fechaAnulacion
+        };
+        anuladasLocales[idClean] = anuladasLocales[idKey];
+        anuladasLocales['#' + idClean] = anuladasLocales[idKey];
+        localStorage.setItem('imtec_ventas_anuladas', JSON.stringify(anuladasLocales));
+      } catch (e) {}
+
+      // 3. Actualizar UI de inmediato
+      filtrarVentas();
+      renderProductos();
+      renderTablasGestionProductos();
+      if (typeof renderTablaCobranza === 'function') renderTablaCobranza();
+
+      // 4. Enviar a backend si hay URL
+      let syncStatus = "local";
+      if (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL && SCRIPT_URL.trim() !== '') {
+        try {
+          const res = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'anularVenta',
+              idVenta: idVenta,
+              motivo: motivoFinal,
+              usuario: (usuarioActual && usuarioActual.nombre) || 'Admin',
+              items: itemsDevolver
+            })
+          });
+          const dataRes = await res.json();
+          if (dataRes && dataRes.status === 'success') {
+            syncStatus = "success";
+          } else if (dataRes && dataRes.status === 'error') {
+            syncStatus = "error_script";
+            console.warn("Respuesta Google Sheets:", dataRes.message);
+          }
+        } catch(e) {
+          console.warn("Anulado localmente:", e);
+          syncStatus = "error_network";
+        }
+      }
+
+      if (syncStatus === "success") {
+        alert("✅ Venta " + idVenta + " ANULADA con éxito.\n\n• Estado actualizado en Google Sheets y en el sistema.\n• Stock reincorporado al inventario.");
+      } else if (syncStatus === "error_script") {
+        alert("✅ Venta " + idVenta + " ANULADA en el sistema.\n\n⚠️ ");
+      } else {
+        alert("✅ Venta " + idVenta + " ANULADA.\nSe sumó el stock correspondiente de nuevo al inventario.");
+      }
     }
 
     function limpiarFiltroFechas() {
@@ -1638,6 +1857,74 @@
     }
 
     // CRUD PRODUCTOS / CLIENTES / USUARIOS
+    function actualizarPanelGananciasInformativas() {
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      const costo = Math.max(0, parseFloat(document.getElementById("prodCosto").value) || 0);
+      const unidades = Math.max(1, parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1);
+      const impuesto = Math.max(0, parseFloat(document.getElementById("prodImpuesto").value) || 0);
+      const tasa = tasaBCVActual > 0 ? tasaBCVActual : 1;
+
+      const CostoxEmp_Impuesto = costo * (1 + (impuesto / 100));
+
+      let costoUnitarioUSD = 0;
+      let costoUnitarioBs = 0;
+
+      if (moneda === "Divisas") {
+        costoUnitarioUSD = CostoxEmp_Impuesto / unidades;
+        costoUnitarioBs = costoUnitarioUSD * tasa;
+      } else {
+        costoUnitarioBs = CostoxEmp_Impuesto / unidades;
+        costoUnitarioUSD = tasa > 0 ? costoUnitarioBs / tasa : costoUnitarioBs;
+      }
+
+      let pRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || parseFloat(document.getElementById("prodPrecioSugerido").value) || 0;
+      let pRealBs = parseFloat(document.getElementById("prodPrecioBs").value) || (pRealUSD * tasa);
+
+      if (moneda === "Precio Fijo") {
+        pRealBs = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+        pRealUSD = tasa > 0 ? pRealBs / tasa : pRealUSD;
+      }
+
+      const gananciaUnidadUSD = pRealUSD - costoUnitarioUSD;
+      const gananciaUnidadBs = pRealBs - costoUnitarioBs;
+      const gananciaEmpaqueUSD = gananciaUnidadUSD * unidades;
+      const gananciaEmpaqueBs = gananciaUnidadBs * unidades;
+
+      const elGuUSD = document.getElementById("infoGananciaUnidadUSD");
+      const elGuBs = document.getElementById("infoGananciaUnidadBs");
+      const elGeUSD = document.getElementById("infoGananciaEmpaqueUSD");
+      const elGeBs = document.getElementById("infoGananciaEmpaqueBs");
+      const elBadgeEmp = document.getElementById("infoBadgeEmpaque");
+      const elCuUSD = document.getElementById("infoCostoUnitarioUSD");
+      const elCuBs = document.getElementById("infoCostoUnitarioBs");
+      const elPvUSD = document.getElementById("infoPrecioVentaUSD");
+      const elPvBs = document.getElementById("infoPrecioVentaBs");
+
+      if (elGuUSD) {
+        elGuUSD.innerText = (gananciaUnidadUSD >= 0 ? "+" : "") + "$" + gananciaUnidadUSD.toFixed(2);
+        elGuUSD.className = "text-sm font-black " + (gananciaUnidadUSD >= 0 ? "text-emerald-600" : "text-rose-600");
+      }
+      if (elGuBs) {
+        elGuBs.innerText = (gananciaUnidadBs >= 0 ? "+" : "") + formatearBS(gananciaUnidadBs);
+        elGuBs.className = "text-xs font-black " + (gananciaUnidadBs >= 0 ? "text-emerald-700" : "text-rose-700");
+      }
+      if (elGeUSD) {
+        elGeUSD.innerText = (gananciaEmpaqueUSD >= 0 ? "+" : "") + "$" + gananciaEmpaqueUSD.toFixed(2);
+        elGeUSD.className = "text-sm font-black " + (gananciaEmpaqueUSD >= 0 ? "text-indigo-600" : "text-rose-600");
+      }
+      if (elGeBs) {
+        elGeBs.innerText = (gananciaEmpaqueBs >= 0 ? "+" : "") + formatearBS(gananciaEmpaqueBs);
+        elGeBs.className = "text-xs font-black " + (gananciaEmpaqueBs >= 0 ? "text-indigo-700" : "text-rose-700");
+      }
+      if (elBadgeEmp) {
+        elBadgeEmp.innerText = unidades + (unidades === 1 ? " unidad" : " unidades");
+      }
+      if (elCuUSD) elCuUSD.innerText = "$" + costoUnitarioUSD.toFixed(2);
+      if (elCuBs) elCuBs.innerText = formatearBS(costoUnitarioBs);
+      if (elPvUSD) elPvUSD.innerText = "$" + pRealUSD.toFixed(2);
+      if (elPvBs) elPvBs.innerText = formatearBS(pRealBs);
+    }
+
     function recalcularValoresProducto() {
       const moneda = document.getElementById("prodMonedaCosto").value;
       const costo = Math.max(0, parseFloat(document.getElementById("prodCosto").value) || 0);
@@ -1690,6 +1977,8 @@
         if (!inputReal.value || !modoEdicionProd) inputReal.value = PrecioVtaSugeridoDivisa.toFixed(2);
         recalcularPrecioBsDesdeReal();
       }
+
+      actualizarPanelGananciasInformativas();
     }
 
     function recalcularPrecioBsDesdeReal() {
@@ -1698,6 +1987,7 @@
       if (moneda !== "Precio Fijo") {
         document.getElementById("prodPrecioBs").value = (precioRealUSD * tasaBCVActual).toFixed(2);
       }
+      actualizarPanelGananciasInformativas();
     }
 
     function recalcularPrecioUSDDesdeBs() {
@@ -1707,6 +1997,7 @@
         const tasa = tasaBCVActual > 0 ? tasaBCVActual : 1;
         document.getElementById("prodPrecioRealDivisas").value = (precioBs / tasa).toFixed(2);
       }
+      actualizarPanelGananciasInformativas();
     }
 
     async function guardarProducto(e) {
