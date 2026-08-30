@@ -622,6 +622,70 @@
       </form>
     </div>
   </div>
+ 
+     <!-- MODAL: VISUALIZAR HISTORIAL DE ABONOS DE UN CLIENTE -->
+     <!-- MODAL: VISUALIZAR HISTORIAL DE ABONOS -->
+<div id="modalHistorialAbonos" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📋</span>
+        <div>
+          <h3 class="font-black text-sm sm:text-base leading-tight">Historial de Abonos Realizados</h3>
+          <p id="histAbonoSubtitulo" class="text-[11px] text-slate-300 mt-0.5">Ticket #0000000 - Cliente</p>
+        </div>
+      </div>
+      <button type="button" onclick="cerrarModalHistorialAbonos()" class="text-slate-400 hover:text-white text-2xl font-bold p-1 leading-none cursor-pointer">&times;</button>
+    </div>
+
+    <!-- Resumen de saldos del ticket -->
+    <div class="p-3 bg-slate-50 border-b grid grid-cols-3 gap-2 text-center text-xs">
+      <div class="bg-white p-2 rounded-xl border">
+        <span class="text-[10px] text-gray-500 font-bold uppercase block">Total Factura</span>
+        <span id="histAbonoTotalFactura" class="font-black text-gray-900 text-sm">$0.00</span>
+      </div>
+      <div class="bg-white p-2 rounded-xl border border-emerald-200">
+        <span class="text-[10px] text-emerald-700 font-bold uppercase block">Total Abonado</span>
+        <span id="histAbonoTotalAbonado" class="font-black text-emerald-600 text-sm">$0.00</span>
+      </div>
+      <div class="bg-white p-2 rounded-xl border border-red-200">
+        <span class="text-[10px] text-red-600 font-bold uppercase block">Resta por Pagar</span>
+        <span id="histAbonoDeudaRestante" class="font-black text-red-600 text-sm">$0.00</span>
+      </div>
+    </div>
+
+    <!-- Tabla de Abonos Realizados -->
+    <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+      <div class="border rounded-xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 uppercase font-bold text-[10px] border-b">
+              <th class="p-2.5">Fecha</th>
+              <th class="p-2.5">Referencia / Método</th>
+              <th class="p-2.5">Cajero</th>
+              <th class="p-2.5 text-right font-bold text-emerald-700">Abono ($)</th>
+              <th class="p-2.5 text-right font-bold text-emerald-800">Abono (Bs.)</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorialAbonosBody" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer del Modal -->
+    <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
+      <span id="histAbonoEstadoTexto" class="text-xs font-bold text-gray-600"></span>
+      <div class="flex gap-2">
+        <button type="button" onclick="cerrarModalHistorialAbonos()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">
+          Cerrar
+        </button>
+        <button type="button" id="btnAbonarDesdeHistorial" onclick="ejecutarAbonarDesdeHistorial()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition cursor-pointer flex items-center gap-1">
+          <span>➕ Registrar Nuevo Abono</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- 10. MODAL DE CÁMARA -->
   <div id="modalEscanerCamara" class="hidden fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -779,7 +843,7 @@
 
   <!-- SCRIPT -->
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyia1NRuLhAGD9UWAo0LFk9OomCDwBXxH8mhczUcEZK6L6gKpvCnjkfAVPUPQ9jle-c/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeQBNR-RtHtrINjgQH_LrBn3yA3MuSRsZltgI4JgvtoAbrxrsoquObY2ERaYPPzr7u/exec";
 
     let usuarioActual = null;
     let clienteSeleccionadoVenta = null;
@@ -799,6 +863,92 @@
     let modoEdicionProd = false;
     let modoEdicionCli = false;
     let modoEdicionUser = false;
+
+
+
+    
+
+
+
+    let ventaHistorialSeleccionada = null;
+
+// Función para comparar IDs de venta sin importar ceros o prefijo '#'
+function normalizarId(id) {
+  if (!id) return "";
+  const s = id.toString().trim();
+  const numOnly = s.replace(/\D/g, "");
+  return numOnly ? parseInt(numOnly, 10).toString() : s.toLowerCase();
+}
+
+function obtenerAbonosDeVenta(idVenta) {
+  const idNorm = normalizarId(idVenta);
+  return dbAbonos.filter(a => {
+    const aNorm = normalizarId(a.idVenta);
+    return aNorm === idNorm || (a.idVenta || "").toString().trim().toLowerCase() === (idVenta || "").toString().trim().toLowerCase();
+  });
+}
+
+function abrirModalHistorialAbonos(idVenta) {
+  const venta = dbVentas.find(v => (v.idVenta || "").toString().trim() === idVenta.toString().trim());
+  if (!venta) return alert("Venta no encontrada.");
+  
+  ventaHistorialSeleccionada = venta;
+  const abonosVenta = obtenerAbonosDeVenta(idVenta);
+  const totalUSD = Number(venta.totalUSD || 0);
+  const totalAbonadoUSD = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
+  const deudaRestanteUSD = Math.max(0, totalUSD - totalAbonadoUSD);
+
+  document.getElementById("histAbonoSubtitulo").innerText = "Ticket " + venta.idVenta + " - " + (venta.clienteNombre || 'Cliente');
+  document.getElementById("histAbonoTotalFactura").innerText = "$" + totalUSD.toFixed(2);
+  document.getElementById("histAbonoTotalAbonado").innerText = "$" + totalAbonadoUSD.toFixed(2);
+  document.getElementById("histAbonoDeudaRestante").innerText = "$" + deudaRestanteUSD.toFixed(2);
+
+  const tbody = document.getElementById("tablaHistorialAbonosBody");
+  const btnAbonar = document.getElementById("btnAbonarDesdeHistorial");
+  const txtEstado = document.getElementById("histAbonoEstadoTexto");
+
+  if (deudaRestanteUSD <= 0.001) {
+    txtEstado.innerHTML = "✅ <span class='text-emerald-600 font-bold'>Cuenta totalmente saldada</span>";
+    if (btnAbonar) btnAbonar.classList.add("hidden");
+  } else {
+    txtEstado.innerHTML = "Resta por pagar: <strong class='text-red-600'>$" + deudaRestanteUSD.toFixed(2) + "</strong> (" + formatearBS(deudaRestanteUSD * tasaBCVActual) + ")";
+    if (btnAbonar) btnAbonar.classList.remove("hidden");
+  }
+
+  if (abonosVenta.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400">No se han registrado abonos aún para esta venta.</td></tr>';
+  } else {
+    tbody.innerHTML = abonosVenta.map(a => {
+      const montoUSD = Number(a.montoUSD) || 0;
+      const tasa = Number(a.tasa) || tasaBCVActual;
+      const montoBs = Number(a.montoBs) || (montoUSD * tasa);
+      return `
+        <tr class="hover:bg-blue-50/50">
+          <td class="p-2.5 font-semibold text-gray-800 whitespace-nowrap">${a.fecha || 'N/A'}</td>
+          <td class="p-2.5 text-gray-700 font-medium">${a.referencia || '-'}</td>
+          <td class="p-2.5 text-gray-500 text-[11px]">${a.usuario || 'Sistema'}</td>
+          <td class="p-2.5 text-right font-black text-emerald-600">$${montoUSD.toFixed(2)}</td>
+          <td class="p-2.5 text-right font-black text-emerald-800 whitespace-nowrap">${formatearBS(montoBs)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  document.getElementById("modalHistorialAbonos").classList.remove("hidden");
+}
+
+function cerrarModalHistorialAbonos() {
+  document.getElementById("modalHistorialAbonos").classList.add("hidden");
+  ventaHistorialSeleccionada = null;
+}
+
+function ejecutarAbonarDesdeHistorial() {
+  if (!ventaHistorialSeleccionada) return;
+  const deuda = calcularDeudaPendiente(ventaHistorialSeleccionada.idVenta, ventaHistorialSeleccionada.totalUSD);
+  cerrarModalHistorialAbonos();
+  abrirModalAbono(ventaHistorialSeleccionada.idVenta, deuda);
+}
+
 
     function formatearFechaLatina(fechaOriginal) {
       if (!fechaOriginal || fechaOriginal === "N/A") return "N/A";
@@ -973,20 +1123,7 @@
         dbAbonos = data.abonos || [];
 
         // Reconciliar con anulaciones locales persistidas
-        try {
-          const anuladasLocales = JSON.parse(localStorage.getItem('imtec_ventas_anuladas') || '{}');
-          dbVentas.forEach(v => {
-            const idKey = (v.idVenta || '').toString().trim();
-            const idClean = idKey.replace(/^#+/, '').trim();
-            const anInfo = anuladasLocales[idKey] || anuladasLocales[idClean] || anuladasLocales['#' + idClean];
-            if (anInfo && v.estado !== 'Anulada') {
-              v.estado = 'Anulada';
-              v.motivoAnulacion = anInfo.motivo || 'Anulada';
-              v.usuarioAnulacion = anInfo.usuario || 'Admin';
-              v.fechaAnulacion = anInfo.fecha || '';
-            }
-          });
-        } catch (e) {}
+       
 
         if (data.tasaBCV && data.tasaBCV.tasa) {
           tasaBCVActual = Number(data.tasaBCV.tasa);
@@ -1079,142 +1216,147 @@
     // RENDER TABLA DE COBRANZAS CON FILTRO DE FECHAS Y TOTAL ACUMULADO
     // ==========================================================
     function renderTablaCobranza() {
-      const tbody = document.getElementById("tablaCobranzaBody");
-      const filtro = (document.getElementById("filtroCobranza").value || "").toLowerCase().trim();
-      const fechaInicioVal = document.getElementById("filtroCobranzaFechaInicio").value;
-      const fechaFinVal = document.getElementById("filtroCobranzaFechaFin").value;
+  const tbody = document.getElementById("tablaCobranzaBody");
+  const filtro = (document.getElementById("filtroCobranza").value || "").toLowerCase().trim();
+  const fechaInicioVal = document.getElementById("filtroCobranzaFechaInicio").value;
+  const fechaFinVal = document.getElementById("filtroCobranzaFechaFin").value;
 
-      let fechaInicio = null;
-      let fechaFin = null;
-      if (fechaInicioVal) {
-        const [a, m, d] = fechaInicioVal.split("-").map(Number);
-        fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
+  let fechaInicio = null;
+  let fechaFin = null;
+  if (fechaInicioVal) {
+    const [a, m, d] = fechaInicioVal.split("-").map(Number);
+    fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
+  }
+  if (fechaFinVal) {
+    const [a, m, d] = fechaFinVal.split("-").map(Number);
+    fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
+  }
+
+  // Todas las ventas a crédito (excluyendo anuladas)
+  const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito" && v.estado !== "Anulada");
+
+  // Filtrar créditos activos
+  const creditosConDeuda = todosCreditos.map(venta => {
+    const deudaRestanteUSD = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
+    const totalAbonadoUSD = calcularTotalAbonadoVenta(venta.idVenta);
+    return {
+      ...venta,
+      deudaUSD: deudaRestanteUSD,
+      deudaBS: deudaRestanteUSD * tasaBCVActual,
+      abonadoUSD: totalAbonadoUSD
+    };
+  });
+
+  // Cálculo del SALDO GENERAL (Sin filtros)
+  const deudaGeneralUSD = creditosConDeuda.reduce((acc, c) => acc + c.deudaUSD, 0);
+  const deudaGeneralBS = deudaGeneralUSD * tasaBCVActual;
+
+  // Actualizar badge en header nav si existe
+  const badgeNav = document.getElementById("badgeDeudaNav");
+  if (badgeNav) {
+    if (deudaGeneralUSD > 0) {
+      badgeNav.innerText = "$" + deudaGeneralUSD.toFixed(2);
+      badgeNav.classList.remove("hidden");
+    } else {
+      badgeNav.classList.add("hidden");
+    }
+  }
+
+  // Aplicar filtros de búsqueda y fechas
+  const creditosFiltrados = creditosConDeuda.filter(c => {
+    if (c.deudaUSD <= 0.001) return false; // Solo pendientes
+
+    const coincideTexto = !filtro || 
+      c.idVenta.toLowerCase().includes(filtro) || 
+      (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro)) ||
+      (c.clienteId && c.clienteId.toLowerCase().includes(filtro));
+
+    let coincideFecha = true;
+    if (fechaInicio || fechaFin) {
+      const fObj = parsearFechaVenta(c.fecha);
+      if (fObj) {
+        if (fechaInicio && fObj < fechaInicio) coincideFecha = false;
+        if (fechaFin && fObj > fechaFin) coincideFecha = false;
       }
-      if (fechaFinVal) {
-        const [a, m, d] = fechaFinVal.split("-").map(Number);
-        fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
-      }
+    }
+    return coincideTexto && coincideFecha;
+  });
 
-      // Todas las ventas a crédito (excluyendo anuladas)
-      const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito" && v.estado !== "Anulada");
+  // Totales de la búsqueda/filtro actual
+  const totalFiltradoUSD = creditosFiltrados.reduce((acc, c) => acc + c.deudaUSD, 0);
+  const totalFiltradoBS = totalFiltradoUSD * tasaBCVActual;
 
-      // Filtrar créditos activos
-      const creditosConDeuda = todosCreditos.map(venta => {
-        const deudaRestanteUSD = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
-        const totalAbonadoUSD = calcularTotalAbonadoVenta(venta.idVenta);
-        return {
-          ...venta,
-          deudaUSD: deudaRestanteUSD,
-          deudaBS: deudaRestanteUSD * tasaBCVActual,
-          abonadoUSD: totalAbonadoUSD
-        };
-      });
+  // Actualizar Tarjeta de Resumen (General vs Cliente Buscado)
+  const badgeTipo = document.getElementById("badgeTipoCobranza");
+  const subtitulo = document.getElementById("subtituloCobranza");
+  const tituloResumen = document.getElementById("tituloResumenCobranza");
+  const descResumen = document.getElementById("descResumenCobranza");
+  const txtTotalUSD = document.getElementById("totalCobranzaUSD");
+  const txtTotalBS = document.getElementById("totalCobranzaBS");
 
-      // Cálculo del SALDO GENERAL (Sin filtros)
-      const deudaGeneralUSD = creditosConDeuda.reduce((acc, c) => acc + c.deudaUSD, 0);
-      const deudaGeneralBS = deudaGeneralUSD * tasaBCVActual;
+  const hayFiltroActivo = Boolean(filtro || fechaInicioVal || fechaFinVal);
 
-      // Actualizar badge en header nav si existe
-      const badgeNav = document.getElementById("badgeDeudaNav");
-      if (badgeNav) {
-        if (deudaGeneralUSD > 0) {
-          badgeNav.innerText = "$" + deudaGeneralUSD.toFixed(2);
-          badgeNav.classList.remove("hidden");
-        } else {
-          badgeNav.classList.add("hidden");
-        }
-      }
+  if (hayFiltroActivo) {
+    const clientesSet = new Set(creditosFiltrados.map(c => c.clienteNombre || 'Cliente'));
+    const listaClientes = Array.from(clientesSet);
 
-      // Aplicar filtros de búsqueda y fechas
-      const creditosFiltrados = creditosConDeuda.filter(c => {
-        if (c.deudaUSD <= 0.001) return false; // Solo pendientes
+    badgeTipo.className = "bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+    badgeTipo.innerText = "FILTRO ACTIVO";
+    subtitulo.innerText = creditosFiltrados.length + " ticket(s) pendiente(s)";
 
-        const coincideTexto = !filtro || 
-          c.idVenta.toLowerCase().includes(filtro) || 
-          (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro)) ||
-          (c.clienteId && c.clienteId.toLowerCase().includes(filtro));
-
-        let coincideFecha = true;
-        if (fechaInicio || fechaFin) {
-          const fObj = parsearFechaVenta(c.fecha);
-          if (fObj) {
-            if (fechaInicio && fObj < fechaInicio) coincideFecha = false;
-            if (fechaFin && fObj > fechaFin) coincideFecha = false;
-          }
-        }
-        return coincideTexto && coincideFecha;
-      });
-
-      // Totales de la búsqueda/filtro actual
-      const totalFiltradoUSD = creditosFiltrados.reduce((acc, c) => acc + c.deudaUSD, 0);
-      const totalFiltradoBS = totalFiltradoUSD * tasaBCVActual;
-
-      // Actualizar Tarjeta de Resumen (General vs Cliente Buscado)
-      const badgeTipo = document.getElementById("badgeTipoCobranza");
-      const subtitulo = document.getElementById("subtituloCobranza");
-      const tituloResumen = document.getElementById("tituloResumenCobranza");
-      const descResumen = document.getElementById("descResumenCobranza");
-      const txtTotalUSD = document.getElementById("totalCobranzaUSD");
-      const txtTotalBS = document.getElementById("totalCobranzaBS");
-
-      const hayFiltroActivo = Boolean(filtro || fechaInicioVal || fechaFinVal);
-
-      if (hayFiltroActivo) {
-        // Obtenemos nombres de clientes únicos en el resultado
-        const clientesSet = new Set(creditosFiltrados.map(c => c.clienteNombre || 'Cliente'));
-        const listaClientes = Array.from(clientesSet);
-
-        badgeTipo.className = "bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
-        badgeTipo.innerText = "FILTRO ACTIVO";
-        subtitulo.innerText = creditosFiltrados.length + " ticket(s) pendiente(s)";
-
-        if (listaClientes.length === 1) {
-          tituloResumen.innerHTML = "<span>Saldo Acumulado: <strong>" + listaClientes[0] + "</strong></span>";
-        } else {
-          tituloResumen.innerHTML = "<span>Total Acumulado de Resultados Filtrados</span>";
-        }
-
-        descResumen.innerText = "Suma de deudas pendientes para la búsqueda '" + (filtro || 'Rango de fechas') + "'.";
-        txtTotalUSD.innerText = "$" + totalFiltradoUSD.toFixed(2);
-        txtTotalBS.innerText = formatearBS(totalFiltradoBS);
-      } else {
-        // SALDO PENDIENTE GENERAL (Sin filtros)
-        badgeTipo.className = "bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
-        badgeTipo.innerText = "SALDO PENDIENTE GENERAL";
-        subtitulo.innerText = "Estado global de deudas";
-        tituloResumen.innerHTML = "<span>Cuentas por Cobrar (Créditos)</span>";
-        descResumen.innerText = "Suma total acumulada de saldos pendientes de todos los clientes a tasa oficial BCV.";
-        txtTotalUSD.innerText = "$" + deudaGeneralUSD.toFixed(2);
-        txtTotalBS.innerText = formatearBS(deudaGeneralBS);
-      }
-
-      // Llenar tabla
-      if (creditosFiltrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">No hay deudas pendientes para esta búsqueda o fecha.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = creditosFiltrados.map(v => `
-        <tr class="hover:bg-blue-50 border-b transition">
-          <td class="p-3 font-mono font-bold text-blue-700">${v.idVenta}</td>
-          <td class="p-3 text-gray-600 whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
-          <td class="p-3">
-            <div class="font-bold text-gray-800">${v.clienteNombre || 'Cliente'}</div>
-            <div class="text-[10px] text-gray-400 font-mono">${v.clienteId || ''}</div>
-          </td>
-          <td class="p-3 text-right font-medium text-gray-700">$${Number(v.totalUSD).toFixed(2)}</td>
-          <td class="p-3 text-right font-medium text-emerald-700">$${v.abonadoUSD.toFixed(2)}</td>
-          <td class="p-3 text-right font-black text-red-600 bg-red-50/40 text-sm">$${v.deudaUSD.toFixed(2)}</td>
-          <td class="p-3 text-right font-black text-emerald-700 bg-emerald-50/40 whitespace-nowrap text-sm">${formatearBS(v.deudaBS)}</td>
-          <td class="p-3 text-center">
-            <button onclick="abrirModalAbono('${v.idVenta}', ${v.deudaUSD})" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-3 py-1.5 rounded-lg shadow font-bold text-xs cursor-pointer transition">
-              ➕ Abonar
-            </button>
-          </td>
-        </tr>
-      `).join('');
+    if (listaClientes.length === 1) {
+      tituloResumen.innerHTML = "<span>Saldo Acumulado: <strong>" + listaClientes[0] + "</strong></span>";
+    } else {
+      tituloResumen.innerHTML = "<span>Total Acumulado de Resultados Filtrados</span>";
     }
 
+    descResumen.innerText = "Suma de deudas pendientes para la búsqueda '" + (filtro || 'Rango de fechas') + "'.";
+    txtTotalUSD.innerText = "$" + totalFiltradoUSD.toFixed(2);
+    txtTotalBS.innerText = formatearBS(totalFiltradoBS);
+  } else {
+    badgeTipo.className = "bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+    badgeTipo.innerText = "SALDO PENDIENTE GENERAL";
+    subtitulo.innerText = "Estado global de deudas";
+    tituloResumen.innerHTML = "<span>Cuentas por Cobrar (Créditos)</span>";
+    descResumen.innerText = "Suma total acumulada de saldos pendientes de todos los clientes a tasa oficial BCV.";
+    txtTotalUSD.innerText = "$" + deudaGeneralUSD.toFixed(2);
+    txtTotalBS.innerText = formatearBS(deudaGeneralBS);
+  }
+
+  // Llenar tabla
+  if (creditosFiltrados.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">No hay deudas pendientes para esta búsqueda o fecha.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = creditosFiltrados.map(v => `
+    <tr class="hover:bg-blue-50 border-b transition">
+      <td class="p-3 font-mono font-bold text-blue-700">${v.idVenta}</td>
+      <td class="p-3 text-gray-600 whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+      <td class="p-3">
+        <div class="font-bold text-gray-800">${v.clienteNombre || 'Cliente'}</div>
+        <div class="text-[10px] text-gray-400 font-mono">${v.clienteId || ''}</div>
+      </td>
+      <td class="p-3 text-right font-medium text-gray-700">$${Number(v.totalUSD).toFixed(2)}</td>
+      <td class="p-3 text-right font-medium text-emerald-700">$${v.abonadoUSD.toFixed(2)}</td>
+      <td class="p-3 text-right font-black text-red-600 bg-red-50/40 text-sm">$${v.deudaUSD.toFixed(2)}</td>
+      <td class="p-3 text-right font-black text-emerald-700 bg-emerald-50/40 whitespace-nowrap text-sm">${formatearBS(v.deudaBS)}</td>
+      <td class="p-3 text-center">
+        <div class="flex items-center justify-center gap-1.5">
+          <!-- Botón Ver Abonos -->
+          <button onclick="abrirModalHistorialAbonos('${v.idVenta}')" title="Ver historial de abonos" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 active:scale-95 px-2.5 py-1.5 rounded-lg shadow-xs font-bold text-xs cursor-pointer transition flex items-center gap-1">
+            <span>👁️ Abonos</span>
+          </button>
+          
+          <!-- Botón Registrar Abono -->
+          <button onclick="abrirModalAbono('${v.idVenta}', ${v.deudaUSD})" title="Registrar nuevo abono" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-2.5 py-1.5 rounded-lg shadow font-bold text-xs cursor-pointer transition">
+            ➕ Abonar
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
     function limpiarFiltrosCobranza() {
       document.getElementById("filtroCobranza").value = "";
       document.getElementById("filtroCobranzaFechaInicio").value = "";
@@ -2230,5 +2372,6 @@
 
     comprobarSesionExistente();
   </script>
+  
 </body>
 </html>
