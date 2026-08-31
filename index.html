@@ -1630,6 +1630,7 @@
         return;
       }
       actualizarUIConexion(true);
+      await sincronizarVentasOffline();
 
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getDatos`, { method: "GET" });
@@ -1743,6 +1744,22 @@
       actualizarBadgeTasaUI();
     }
 
+    function actualizarBadgeColaOffline() {
+  const cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
+  const btnSync = document.querySelector("button[onclick='cargarDatos()']");
+
+  if (btnSync) {
+    if (cola.length > 0) {
+      btnSync.innerHTML = `🔄 Sincronizar <span class="bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded-full text-[10px] font-black">${cola.length}</span>`;
+      btnSync.classList.add("animate-pulse", "bg-amber-600");
+    } else {
+      btnSync.innerHTML = `🔄 Sincronizar`;
+      btnSync.classList.remove("animate-pulse", "bg-amber-600");
+    }
+  }
+}
+
+
     // 4. Guardar en cola Offline (con comparación limpia por ID normalizado)
     function guardarVentaEnColaOffline(venta) {
       const cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
@@ -1768,53 +1785,60 @@
     // 5. Sincronización segura con Candado e Inspección Normalizada
     let isSyncingOffline = false;
 
+    
     async function sincronizarVentasOffline() {
-      if (!navigator.onLine || isSyncingOffline) return;
+  if (!navigator.onLine || isSyncingOffline) return;
 
-      let cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
-      if (cola.length === 0) return;
+  let cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
+  if (cola.length === 0) {
+    actualizarBadgeColaOffline();
+    return;
+  }
 
-      isSyncingOffline = true;
-      console.log(`📡 Sincronizando ${cola.length} ventas offline...`);
+  isSyncingOffline = true;
+  console.log(`📡 Sincronizando ${cola.length} ventas offline...`);
 
-      const colaRestante = [];
+  const colaRestante = [];
 
-      for (const venta of cola) {
-        const idNorm = normalizarTicketId(venta.idVenta);
+  for (const venta of cola) {
+    let idNorm = normalizarTicketId(venta.idVenta);
 
-        // Verificación de seguridad normalizada: si la venta ya está en la BD, se descarta de la cola
-        const yaRegistradaEnBD = dbVentas.some(v => normalizarTicketId(v.idVenta) === idNorm);
-        if (yaRegistradaEnBD) {
-          console.log(`⚠️ Venta ${venta.idVenta} ya estaba registrada en la BD. Removiendo de la cola.`);
-          continue; 
-        }
-
-        try {
-          const res = await fetch(SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "registrarVenta", venta })
-          });
-          
-          const data = await res.json();
-          
-          if (data.status === "error") {
-            colaRestante.push(venta);
-          } else {
-            console.log(`✅ Venta ${venta.idVenta} sincronizada con éxito.`);
-          }
-        } catch (err) {
-          colaRestante.push(venta);
-        }
-      }
-
-      localStorage.setItem('imtec_cola_ventas', JSON.stringify(colaRestante));
-      isSyncingOffline = false;
-
-      if (colaRestante.length < cola.length) {
-        await cargarDatosPostSincronizacion();
-      }
+    // FIX: Si el ticket ya existe en la BD, se le asigna el siguiente disponible para NO PERDER la venta
+    const yaRegistradaEnBD = dbVentas.some(v => normalizarTicketId(v.idVenta) === idNorm);
+    if (yaRegistradaEnBD) {
+      const nuevoTicket = obtenerSiguienteCorrelativo();
+      console.warn(`⚠️ Conflicto con el ticket ${venta.idVenta}. Reasignando a ${nuevoTicket}`);
+      venta.idVenta = nuevoTicket;
     }
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "registrarVenta", venta })
+      });
+      
+      const data = await res.json();
+      
+      if (data.status === "error") {
+        colaRestante.push(venta);
+      } else {
+        console.log(`✅ Venta ${venta.idVenta} sincronizada con éxito.`);
+      }
+    } catch (err) {
+      console.error("Error al enviar venta offline:", err);
+      colaRestante.push(venta);
+    }
+  }
+
+  localStorage.setItem('imtec_cola_ventas', JSON.stringify(colaRestante));
+  isSyncingOffline = false;
+  actualizarBadgeColaOffline();
+
+  if (colaRestante.length < cola.length) {
+    await cargarDatosPostSincronizacion();
+  }
+}
 
     // 6. Recarga limpia tras sincronizar
     async function cargarDatosPostSincronizacion() {
