@@ -82,6 +82,8 @@
         <span>💰 Cobranza</span>
         <span id="badgeDeudaNav" class="hidden bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.2 rounded-full font-black"></span>
       </button>
+      <button onclick="cambiarVista('historialAbonos')" id="btnNavHistorialAbonos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📚 Abonos</button>
+      <button onclick="cambiarVista('cxp')" id="btnNavCXP" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📉 Cuentas por Pagar</button>
       <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👥 Clientes</button>
       <button onclick="cambiarVista('productos')" id="btnNavProductos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📦 Productos</button>
       <button onclick="cambiarVista('usuarios')" id="btnNavUsuarios" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👤 Usuarios</button>
@@ -491,10 +493,8 @@
     </div>
   </div>
 
-  <!-- 8. VISTA MODIFICADA: CUENTAS POR COBRAR (COBRANZA CON FILTRO DE FECHA Y TOTALES ACUMULADOS) -->
+  <!-- 8. VISTA: CUENTAS POR COBRAR -->
   <div id="vistaCobranza" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 max-w-7xl mx-auto w-full">
-    
-    <!-- TARJETA DINÁMICA DE SALDOS (GENERAL vs CLIENTE BUSCADO) -->
     <div id="tarjetaResumenCobranza" class="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-6 rounded-2xl shadow-xl border border-blue-800/40">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -526,7 +526,6 @@
       </div>
     </div>
 
-    <!-- FILTROS DE COBRANZA: BUSCADOR + FECHAS (DESDE / HASTA) -->
     <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2.5">
       <div class="flex flex-col lg:flex-row gap-2 items-center justify-between">
         <div class="w-full lg:w-1/3">
@@ -556,7 +555,6 @@
       </div>
     </div>
       
-    <!-- TABLA DE CUENTAS POR COBRAR -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
@@ -578,24 +576,122 @@
     </div>
   </div>
 
-  <!-- 9. MODAL PARA REGISTRAR ABONO -->
+  <!-- 9. VISTA: CUENTAS POR PAGAR (CXP) -->
+  <div id="vistaCXP" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto max-w-7xl mx-auto w-full flex flex-col gap-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+      <div>
+        <h2 class="text-xl font-black text-gray-800">📉 Cuentas por Pagar a Proveedores</h2>
+        <p class="text-xs text-gray-500">Gestión de facturas a crédito, compras pendientes y pagos a proveedores.</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="abrirModalNuevoProveedor()" class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow cursor-pointer">
+          👥 Nuevo Proveedor
+        </button>
+        <button onclick="abrirModalNuevaCXP()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow cursor-pointer">
+          ➕ Nueva Deuda / Factura
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex justify-between items-center">
+        <div>
+          <p class="text-xs font-bold text-amber-800 uppercase">Total Por Pagar (USD)</p>
+          <p id="totalDeudaCXPUSD" class="text-2xl font-black text-amber-900">$0.00</p>
+        </div>
+        <span class="text-3xl">💵</span>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex justify-between items-center">
+        <div>
+          <p class="text-xs font-bold text-emerald-800 uppercase">Total Por Pagar (Bs - BCV)</p>
+          <p id="totalDeudaCXPBS" class="text-2xl font-black text-emerald-900">Bs. 0,00</p>
+        </div>
+        <span class="text-3xl">🇻🇪</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+      <h3 class="font-bold text-gray-700 mb-3 text-sm">Facturas y Deudas Pendientes</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 border-b">
+              <th class="p-2.5">Fecha</th>
+              <th class="p-2.5">Proveedor</th>
+              <th class="p-2.5">N° Factura</th>
+              <th class="p-2.5">Concepto</th>
+              <th class="p-2.5 text-right">Total ($)</th>
+              <th class="p-2.5 text-right">Saldo ($)</th>
+              <th class="p-2.5 text-right">Saldo (Bs)</th>
+              <th class="p-2.5 text-center">Estado</th>
+              <th class="p-2.5 text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaCXP"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. VISTA: HISTORIAL ABONOS -->
+  <div id="vistaHistorialAbonos" class="hidden flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 max-w-7xl mx-auto w-full">
+    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-2.5">
+      <h2 class="text-lg font-black text-gray-800 border-b pb-2 mb-2">📚 Historial General de Abonos</h2>
+      <div class="flex flex-col lg:flex-row gap-2 items-center justify-between">
+        <div class="w-full lg:w-1/3">
+          <input type="text" id="filtroTextoAbonos" placeholder="🔍 Buscar por ticket o cliente..." oninput="renderTablaHistorialAbonos()"
+                 class="w-full border border-gray-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full lg:w-auto">
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Desde:</label>
+            <input type="date" id="filtroAbonoFechaInicio" onchange="renderTablaHistorialAbonos()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+          <div class="flex items-center gap-1 bg-gray-50 border border-gray-300 px-2 py-1 rounded-lg">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Hasta:</label>
+            <input type="date" id="filtroAbonoFechaFin" onchange="renderTablaHistorialAbonos()" class="text-xs bg-transparent outline-none font-semibold text-gray-700 cursor-pointer">
+          </div>
+          <button type="button" onclick="limpiarFiltrosAbonos()" title="Limpiar filtros" class="bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer">🧹 Limpiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex-1">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 uppercase border-b text-[11px]">
+              <th class="p-3 font-bold">Fecha</th>
+              <th class="p-3 font-bold">Ticket #</th>
+              <th class="p-3 font-bold">Cliente</th>
+              <th class="p-3 font-bold">Ref / Método</th>
+              <th class="p-3 font-bold text-right">Abono ($)</th>
+              <th class="p-3 font-bold text-right">Abono (Bs.)</th>
+              <th class="p-3 font-bold text-center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorialAbonosGeneralBody" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALES -->
+  <!-- MODAL ABONO COBRANZA -->
   <div id="modalAbono" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3">
     <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-gray-200">
       <div class="flex justify-between items-start border-b pb-2 mb-3">
         <h3 class="font-black text-lg text-gray-900">💵 Registrar Abono</h3>
         <button type="button" onclick="cerrarModalAbono()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold leading-none cursor-pointer">&times;</button>
       </div>
-      
       <form onsubmit="guardarAbono(event)" class="flex flex-col gap-3">
         <input type="hidden" id="abonoIdVenta">
-        
         <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200 text-center mb-1">
           <span class="text-[10px] text-blue-600 font-bold uppercase">Deuda Restante:</span>
           <div class="text-sm font-black text-blue-800">
             <span id="abonoDeudaUSD" class="text-amber-600 font-black">$0.00</span> / <span id="abonoDeudaBS" class="text-emerald-700 font-black">0.00 Bs</span>
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[10px] font-bold text-gray-600 uppercase mb-1">Moneda:</label>
@@ -609,12 +705,10 @@
             <input type="number" step="0.01" min="0.01" id="abonoMontoIngresado" required placeholder="Ej: 10.00" class="w-full border p-2.5 rounded-lg text-xs font-bold">
           </div>
         </div>
-
         <div>
           <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Método y Referencia:</label>
           <input type="text" id="abonoReferencia" required placeholder="Ej: Pago Móvil - Ref 1234" class="w-full border p-2.5 rounded-lg text-xs">
         </div>
-
         <div class="flex gap-2 mt-2">
           <button type="button" onclick="cerrarModalAbono()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2.5 rounded-lg text-xs transition cursor-pointer">Cancelar</button>
           <button type="submit" id="btnSubmitAbono" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-xs shadow transition cursor-pointer">💾 Procesar Abono</button>
@@ -622,72 +716,166 @@
       </form>
     </div>
   </div>
- 
-     <!-- MODAL: VISUALIZAR HISTORIAL DE ABONOS DE UN CLIENTE -->
-     <!-- MODAL: VISUALIZAR HISTORIAL DE ABONOS -->
-<div id="modalHistorialAbonos" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
-    <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">📋</span>
-        <div>
-          <h3 class="font-black text-sm sm:text-base leading-tight">Historial de Abonos Realizados</h3>
-          <p id="histAbonoSubtitulo" class="text-[11px] text-slate-300 mt-0.5">Ticket #0000000 - Cliente</p>
+
+  <!-- MODAL HISTORIAL ABONOS -->
+  <div id="modalHistorialAbonos" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📋</span>
+          <div>
+            <h3 class="font-black text-sm sm:text-base leading-tight">Historial de Abonos Realizados</h3>
+            <p id="histAbonoSubtitulo" class="text-[11px] text-slate-300 mt-0.5">Ticket #0000000 - Cliente</p>
+          </div>
+        </div>
+        <button type="button" onclick="cerrarModalHistorialAbonos()" class="text-slate-400 hover:text-white text-2xl font-bold p-1 leading-none cursor-pointer">&times;</button>
+      </div>
+      <div class="p-3 bg-slate-50 border-b grid grid-cols-3 gap-2 text-center text-xs">
+        <div class="bg-white p-2 rounded-xl border">
+          <span class="text-[10px] text-gray-500 font-bold uppercase block">Total Factura</span>
+          <span id="histAbonoTotalFactura" class="font-black text-gray-900 text-sm">$0.00</span>
+        </div>
+        <div class="bg-white p-2 rounded-xl border border-emerald-200">
+          <span class="text-[10px] text-emerald-700 font-bold uppercase block">Total Abonado</span>
+          <span id="histAbonoTotalAbonado" class="font-black text-emerald-600 text-sm">$0.00</span>
+        </div>
+        <div class="bg-white p-2 rounded-xl border border-red-200">
+          <span class="text-[10px] text-red-600 font-bold uppercase block">Resta por Pagar</span>
+          <span id="histAbonoDeudaRestante" class="font-black text-red-600 text-sm">$0.00</span>
         </div>
       </div>
-      <button type="button" onclick="cerrarModalHistorialAbonos()" class="text-slate-400 hover:text-white text-2xl font-bold p-1 leading-none cursor-pointer">&times;</button>
-    </div>
-
-    <!-- Resumen de saldos del ticket -->
-    <div class="p-3 bg-slate-50 border-b grid grid-cols-3 gap-2 text-center text-xs">
-      <div class="bg-white p-2 rounded-xl border">
-        <span class="text-[10px] text-gray-500 font-bold uppercase block">Total Factura</span>
-        <span id="histAbonoTotalFactura" class="font-black text-gray-900 text-sm">$0.00</span>
+      <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+        <div class="border rounded-xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-gray-100 text-gray-700 uppercase font-bold text-[10px] border-b">
+                <th class="p-2.5">Fecha</th>
+                <th class="p-2.5">Referencia / Método</th>
+                <th class="p-2.5">Cajero</th>
+                <th class="p-2.5 text-right font-bold text-emerald-700">Abono ($)</th>
+                <th class="p-2.5 text-right font-bold text-emerald-800">Abono (Bs.)</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialAbonosBody" class="divide-y divide-gray-100"></tbody>
+          </table>
+        </div>
       </div>
-      <div class="bg-white p-2 rounded-xl border border-emerald-200">
-        <span class="text-[10px] text-emerald-700 font-bold uppercase block">Total Abonado</span>
-        <span id="histAbonoTotalAbonado" class="font-black text-emerald-600 text-sm">$0.00</span>
-      </div>
-      <div class="bg-white p-2 rounded-xl border border-red-200">
-        <span class="text-[10px] text-red-600 font-bold uppercase block">Resta por Pagar</span>
-        <span id="histAbonoDeudaRestante" class="font-black text-red-600 text-sm">$0.00</span>
-      </div>
-    </div>
-
-    <!-- Tabla de Abonos Realizados -->
-    <div class="p-3 sm:p-4 overflow-y-auto flex-1">
-      <div class="border rounded-xl overflow-hidden">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-gray-100 text-gray-700 uppercase font-bold text-[10px] border-b">
-              <th class="p-2.5">Fecha</th>
-              <th class="p-2.5">Referencia / Método</th>
-              <th class="p-2.5">Cajero</th>
-              <th class="p-2.5 text-right font-bold text-emerald-700">Abono ($)</th>
-              <th class="p-2.5 text-right font-bold text-emerald-800">Abono (Bs.)</th>
-            </tr>
-          </thead>
-          <tbody id="tablaHistorialAbonosBody" class="divide-y divide-gray-100"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Footer del Modal -->
-    <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
-      <span id="histAbonoEstadoTexto" class="text-xs font-bold text-gray-600"></span>
-      <div class="flex gap-2">
-        <button type="button" onclick="cerrarModalHistorialAbonos()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">
-          Cerrar
-        </button>
-        <button type="button" id="btnAbonarDesdeHistorial" onclick="ejecutarAbonarDesdeHistorial()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition cursor-pointer flex items-center gap-1">
-          <span>➕ Registrar Nuevo Abono</span>
-        </button>
+      <div class="p-3 bg-gray-50 border-t flex justify-between items-center">
+        <span id="histAbonoEstadoTexto" class="text-xs font-bold text-gray-600"></span>
+        <div class="flex gap-2">
+          <button type="button" onclick="cerrarModalHistorialAbonos()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer">Cerrar</button>
+          <button type="button" id="btnAbonarDesdeHistorial" onclick="ejecutarAbonarDesdeHistorial()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow transition cursor-pointer flex items-center gap-1">
+            <span>➕ Registrar Nuevo Abono</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-  <!-- 10. MODAL DE CÁMARA -->
+  <!-- MODAL REGISTRAR PROVEEDOR -->
+  <div id="modalProveedor" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">👥 Registrar Proveedor</h3>
+      <form onsubmit="guardarProveedorForm(event)" class="flex flex-col gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">RIF / Cédula:</label>
+          <input type="text" id="provID" required placeholder="Ej: J-12345678-9" class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre / Razón Social:</label>
+          <input type="text" id="provNombre" required placeholder="Ej: Distribuidora Alimentos C.A." class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Teléfono:</label>
+          <input type="text" id="provTelefono" placeholder="Ej: 0414-1234567" class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Dirección:</label>
+          <input type="text" id="provDireccion" placeholder="Dirección del proveedor..." class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="cerrarModal('modalProveedor')" class="px-4 py-2 bg-gray-200 text-xs font-bold rounded-lg cursor-pointer">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow cursor-pointer">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL NUEVA CUENTA POR PAGAR -->
+  <div id="modalNuevaCXP" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-lg border">
+      <h3 class="text-lg font-bold text-gray-800 mb-4">➕ Registrar Deuda / Compras a Crédito</h3>
+      <form onsubmit="guardarNuevaCXP(event)" class="flex flex-col gap-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Proveedor:</label>
+          <select id="cxpSelectProveedor" required class="w-full border p-2 rounded-lg text-xs bg-white font-bold">
+            <option value="">-- Selecciona un proveedor --</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">N° Factura / Control:</label>
+            <input type="text" id="cxpNroFactura" required placeholder="Ej: FAC-00123" class="w-full border p-2 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Total ($):</label>
+            <input type="number" step="0.01" min="0.01" id="cxpMontoUSD" required placeholder="100.00" oninput="recalcularMontoCXPBs()" class="w-full border p-2 rounded-lg text-xs font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Equiv. Bs (Tasa BCV):</label>
+          <input type="text" id="cxpMontoBs" readonly class="w-full border bg-gray-100 p-2 rounded-lg text-xs font-bold text-gray-700">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Concepto / Descripción:</label>
+          <input type="text" id="cxpConcepto" required placeholder="Ej: Compra de víveres al mayor" class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="cerrarModal('modalNuevaCXP')" class="px-4 py-2 bg-gray-200 text-xs font-bold rounded-lg cursor-pointer">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg shadow cursor-pointer">Registrar Deuda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ABONAR CXP -->
+  <div id="modalAbonarCXP" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border">
+      <h3 class="text-lg font-bold text-gray-800 mb-2">💵 Registrar Pago a Proveedor</h3>
+      <p id="infoDeudaAbono" class="text-xs text-blue-700 font-bold mb-4 bg-blue-50 p-2 rounded-lg"></p>
+      <form onsubmit="procesarAbonoProveedor(event)" class="flex flex-col gap-3">
+        <input type="hidden" id="abonoIDCXP">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Abono ($):</label>
+          <input type="number" step="0.01" min="0.01" id="abonoMontoUSD" required placeholder="50.00" oninput="recalcularAbonoProveedorBs()" class="w-full border p-2 rounded-lg text-xs font-bold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Monto Equiv. (Bs):</label>
+          <input type="text" id="abonoMontoBs" readonly class="w-full border bg-gray-100 p-2 rounded-lg text-xs font-bold text-gray-700">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Método de Pago:</label>
+          <select id="abonoMetodo" class="w-full border p-2 rounded-lg text-xs bg-white font-semibold">
+            <option value="Transferencia Bs">Transferencia Bs</option>
+            <option value="Pago Móvil">Pago Móvil</option>
+            <option value="Efectivo $">Efectivo ($)</option>
+            <option value="Efectivo Bs">Efectivo (Bs)</option>
+            <option value="Zelle">Zelle</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">N° Referencia / Comprobante:</label>
+          <input type="text" id="abonoReferencia" placeholder="Ej: 123456" class="w-full border p-2 rounded-lg text-xs">
+        </div>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="cerrarModal('modalAbonarCXP')" class="px-4 py-2 bg-gray-200 text-xs font-bold rounded-lg cursor-pointer">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg shadow cursor-pointer">Registrar Pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE CÁMARA -->
   <div id="modalEscanerCamara" class="hidden fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-300">
       <div class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -710,7 +898,7 @@
     </div>
   </div>
 
-  <!-- 11. MODAL DE COBRO CONTADO -->
+  <!-- MODAL DE COBRO CONTADO -->
   <div id="modalCobroPago" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4 sm:p-6 border border-gray-200 flex flex-col max-h-[95vh] overflow-y-auto">
       <div class="flex justify-between items-start border-b pb-2 mb-3">
@@ -720,7 +908,6 @@
         </div>
         <button onclick="cerrarModalCobro()" class="text-gray-400 hover:text-gray-700 text-2xl font-bold p-1 leading-none cursor-pointer">&times;</button>
       </div>
-
       <div class="bg-slate-900 text-white rounded-xl p-3 mb-3 grid grid-cols-2 gap-2 shadow-inner">
         <div>
           <span class="text-[10px] font-bold uppercase text-slate-400">Total Bs:</span>
@@ -731,7 +918,6 @@
           <div class="text-xl font-black text-blue-400" id="cobroModalTotalUSD">$0.00</div>
         </div>
       </div>
-
       <div class="bg-gray-50 rounded-xl p-3 border border-gray-200 mb-3 flex flex-col gap-2">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
@@ -753,7 +939,6 @@
             <input type="text" id="cobroInputRef" placeholder="Ej: 1234" class="w-full border p-2 rounded-lg text-xs">
           </div>
         </div>
-
         <div class="flex flex-wrap gap-1 items-center justify-between pt-1">
           <div class="flex flex-wrap gap-1 text-[10px]">
             <button type="button" onclick="atajoPagarRestante('Punto de Venta')" class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-semibold cursor-pointer">Todo Punto</button>
@@ -764,7 +949,6 @@
           <button type="button" onclick="agregarMetodoPagoFila()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow cursor-pointer">➕ Agregar</button>
         </div>
       </div>
-
       <div class="overflow-y-auto flex-1 border rounded-xl mb-3 bg-white max-h-36">
         <table class="w-full text-left text-xs">
           <thead>
@@ -779,7 +963,6 @@
           <tbody id="cobroTablaMetodosBody" class="divide-y divide-gray-100"></tbody>
         </table>
       </div>
-
       <div class="bg-gray-50 border rounded-xl p-2.5 flex flex-col gap-1.5 mb-3">
         <div class="flex justify-between items-center text-xs font-semibold text-gray-700">
           <span>Total Abonado:</span>
@@ -787,7 +970,6 @@
         </div>
         <div id="cobroEstadoAlerta" class="p-2 rounded-lg text-xs font-bold text-center border"></div>
       </div>
-
       <div class="flex gap-2">
         <button type="button" onclick="cerrarModalCobro()" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl text-xs transition cursor-pointer">Cancelar</button>
         <button type="button" id="btnConfirmarVentaFinal" onclick="confirmarVentaConPagos()" disabled
@@ -798,7 +980,7 @@
     </div>
   </div>
 
-  <!-- 12. TICKET TÉRMICO -->
+  <!-- TICKET TÉRMICO -->
   <div id="ticketTermicoContainer" class="hidden">
     <div style="text-align: center; margin-bottom: 4px;">
       <h2 style="font-size: 14px; font-weight: bold; margin: 0;">iMtec POS</h2>
@@ -840,10 +1022,57 @@
       <p style="margin: 1px 0;">iMtec POS - Control de Ventas</p>
     </div>
   </div>
+    <!-- MODAL DETALLE DE VENTA -->
+<div id="modalDetalleVenta" class="hidden fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50 p-3 sm:p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-blue-600 text-white p-4 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🧾</span>
+        <div>
+          <h3 class="font-black text-sm sm:text-base leading-tight">Detalle de Productos Vendidos</h3>
+          <p id="detVentaSubtitulo" class="text-[11px] text-blue-100 mt-0.5">Ticket #0000000</p>
+        </div>
+      </div>
+      <button type="button" onclick="cerrarModalDetalleVenta()" class="text-blue-200 hover:text-white text-2xl font-bold p-1 leading-none cursor-pointer">&times;</button>
+    </div>
+    
+    <div class="p-3 bg-gray-50 border-b grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+      <div><span class="text-gray-500 block text-[10px] uppercase font-bold">Cliente:</span><span id="detVentaCliente" class="font-bold text-gray-800"></span></div>
+      <div><span class="text-gray-500 block text-[10px] uppercase font-bold">Vendedor:</span><span id="detVentaVendedor" class="font-semibold text-gray-700"></span></div>
+      <div><span class="text-gray-500 block text-[10px] uppercase font-bold">Fecha:</span><span id="detVentaFecha" class="font-semibold text-gray-700"></span></div>
+    </div>
+
+    <div class="p-4 overflow-y-auto flex-1">
+      <div class="border rounded-xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 uppercase font-bold text-[10px] border-b">
+              <th class="p-2.5">Producto</th>
+              <th class="p-2.5 text-center">Cant.</th>
+              <th class="p-2.5 text-right">Precio ($)</th>
+              <th class="p-2.5 text-right">Subtotal ($)</th>
+            </tr>
+          </thead>
+          <tbody id="detVentaItemsBody" class="divide-y divide-gray-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="p-3 bg-slate-900 text-white flex justify-between items-center text-xs">
+      <div class="flex flex-col">
+        <span class="text-slate-400 text-[10px] uppercase font-bold">Total Facturado:</span>
+        <span id="detVentaTotalBS" class="text-emerald-400 font-black text-sm sm:text-base">Bs. 0,00</span>
+      </div>
+      <div class="text-right">
+        <span id="detVentaTotalUSD" class="text-blue-400 font-black text-base sm:text-lg">$0.00</span>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- SCRIPT -->
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyIqhYDU9a_El0QXnaFy33_3AwscrWFaoudVEpVXcUEQEiDwZKfO9Q71YNBj08vP7iy/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxnH28SCCUyIpvNAlOuK3PkAfVXEsJbmdN5u_y0RDEaZ3LG7ugni22E8nSLW0jVaeqn/exec";
 
     let usuarioActual = null;
     let clienteSeleccionadoVenta = null;
@@ -863,92 +1092,339 @@
     let modoEdicionProd = false;
     let modoEdicionCli = false;
     let modoEdicionUser = false;
-
-
-
-    
-
-
-
     let ventaHistorialSeleccionada = null;
 
-// Función para comparar IDs de venta sin importar ceros o prefijo '#'
-function normalizarId(id) {
-  if (!id) return "";
-  const s = id.toString().trim();
-  const numOnly = s.replace(/\D/g, "");
-  return numOnly ? parseInt(numOnly, 10).toString() : s.toLowerCase();
-}
+    let dbProveedores = [];
+    let dbCXP = [];
+    let cxpSeleccionada = null;
 
-function obtenerAbonosDeVenta(idVenta) {
-  const idNorm = normalizarId(idVenta);
-  return dbAbonos.filter(a => {
-    const aNorm = normalizarId(a.idVenta);
-    return aNorm === idNorm || (a.idVenta || "").toString().trim().toLowerCase() === (idVenta || "").toString().trim().toLowerCase();
-  });
-}
 
-function abrirModalHistorialAbonos(idVenta) {
+    function abrirModalDetalleVenta(idVenta) {
   const venta = dbVentas.find(v => (v.idVenta || "").toString().trim() === idVenta.toString().trim());
   if (!venta) return alert("Venta no encontrada.");
-  
-  ventaHistorialSeleccionada = venta;
-  const abonosVenta = obtenerAbonosDeVenta(idVenta);
-  const totalUSD = Number(venta.totalUSD || 0);
-  const totalAbonadoUSD = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
-  const deudaRestanteUSD = Math.max(0, totalUSD - totalAbonadoUSD);
 
-  document.getElementById("histAbonoSubtitulo").innerText = "Ticket " + venta.idVenta + " - " + (venta.clienteNombre || 'Cliente');
-  document.getElementById("histAbonoTotalFactura").innerText = "$" + totalUSD.toFixed(2);
-  document.getElementById("histAbonoTotalAbonado").innerText = "$" + totalAbonadoUSD.toFixed(2);
-  document.getElementById("histAbonoDeudaRestante").innerText = "$" + deudaRestanteUSD.toFixed(2);
+  document.getElementById("detVentaSubtitulo").innerText = `Ticket ${venta.idVenta} (${venta.tipo || 'Contado'})`;
+  document.getElementById("detVentaCliente").innerText = venta.clienteNombre || 'Cliente General';
+  document.getElementById("detVentaVendedor").innerText = venta.vendedor || 'N/A';
+  document.getElementById("detVentaFecha").innerText = formatearFechaLatina(venta.fecha);
+  document.getElementById("detVentaTotalUSD").innerText = `$${Number(venta.totalUSD || 0).toFixed(2)}`;
+  document.getElementById("detVentaTotalBS").innerText = formatearBS(venta.totalBS || 0);
 
-  const tbody = document.getElementById("tablaHistorialAbonosBody");
-  const btnAbonar = document.getElementById("btnAbonarDesdeHistorial");
-  const txtEstado = document.getElementById("histAbonoEstadoTexto");
+  const tbody = document.getElementById("detVentaItemsBody");
+  let items = [];
 
-  if (deudaRestanteUSD <= 0.001) {
-    txtEstado.innerHTML = "✅ <span class='text-emerald-600 font-bold'>Cuenta totalmente saldada</span>";
-    if (btnAbonar) btnAbonar.classList.add("hidden");
-  } else {
-    txtEstado.innerHTML = "Resta por pagar: <strong class='text-red-600'>$" + deudaRestanteUSD.toFixed(2) + "</strong> (" + formatearBS(deudaRestanteUSD * tasaBCVActual) + ")";
-    if (btnAbonar) btnAbonar.classList.remove("hidden");
+  if (Array.isArray(venta.items) && venta.items.length > 0) {
+    items = venta.items;
+  } else if (venta.detalle) {
+    const partes = venta.detalle.split(",");
+    partes.forEach(p => {
+      const m = p.trim().match(/^(\d+(?:\.\d+)?)\s*x\s*(.+?)(?:\s*\(\s*\$([\d.]+)\s*\))?$/i);
+      if (m) {
+        items.push({ cantidad: parseFloat(m[1]) || 1, nombre: m[2].trim(), precio: parseFloat(m[3]) || 0 });
+      } else {
+        items.push({ cantidad: 1, nombre: p.trim(), precio: 0 });
+      }
+    });
   }
 
-  if (abonosVenta.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400">No se han registrado abonos aún para esta venta.</td></tr>';
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">Sin detalle de artículos disponible</td></tr>';
   } else {
-    tbody.innerHTML = abonosVenta.map(a => {
-      const montoUSD = Number(a.montoUSD) || 0;
-      const tasa = Number(a.tasa) || tasaBCVActual;
-      const montoBs = Number(a.montoBs) || (montoUSD * tasa);
+    tbody.innerHTML = items.map(item => {
+      const cant = Number(item.cantidad) || 1;
+      const precio = Number(item.precio) || 0;
+      const subtotal = precio * cant;
       return `
         <tr class="hover:bg-blue-50/50">
-          <td class="p-2.5 font-semibold text-gray-800 whitespace-nowrap">${a.fecha || 'N/A'}</td>
-          <td class="p-2.5 text-gray-700 font-medium">${a.referencia || '-'}</td>
-          <td class="p-2.5 text-gray-500 text-[11px]">${a.usuario || 'Sistema'}</td>
-          <td class="p-2.5 text-right font-black text-emerald-600">$${montoUSD.toFixed(2)}</td>
-          <td class="p-2.5 text-right font-black text-emerald-800 whitespace-nowrap">${formatearBS(montoBs)}</td>
+          <td class="p-2.5 font-bold text-gray-800">${item.nombre || item.codigo || 'Producto'}</td>
+          <td class="p-2.5 text-center font-bold text-blue-600">${cant}</td>
+          <td class="p-2.5 text-right text-gray-600">$${precio.toFixed(2)}</td>
+          <td class="p-2.5 text-right font-black text-gray-900">$${subtotal.toFixed(2)}</td>
         </tr>
       `;
     }).join('');
   }
 
-  document.getElementById("modalHistorialAbonos").classList.remove("hidden");
+  document.getElementById("modalDetalleVenta").classList.remove("hidden");
 }
 
-function cerrarModalHistorialAbonos() {
-  document.getElementById("modalHistorialAbonos").classList.add("hidden");
-  ventaHistorialSeleccionada = null;
+function cerrarModalDetalleVenta() {
+  document.getElementById("modalDetalleVenta").classList.add("hidden");
 }
 
-function ejecutarAbonarDesdeHistorial() {
-  if (!ventaHistorialSeleccionada) return;
-  const deuda = calcularDeudaPendiente(ventaHistorialSeleccionada.idVenta, ventaHistorialSeleccionada.totalUSD);
-  cerrarModalHistorialAbonos();
-  abrirModalAbono(ventaHistorialSeleccionada.idVenta, deuda);
-}
+    async function cargarCXP() {
+      try {
+        const [resProv, resCXP] = await Promise.all([
+          fetch(`${SCRIPT_URL}?action=getProveedores`).then(r => r.json()),
+          fetch(`${SCRIPT_URL}?action=getCuentasPorPagar`).then(r => r.json())
+        ]);
 
+        if (resProv.status === "success") dbProveedores = resProv.proveedores || [];
+        if (resCXP.status === "success") dbCXP = resCXP.cxp || [];
+
+        renderizarTablaCXP();
+      } catch (err) {
+        console.error("Error al cargar Cuentas por Pagar:", err);
+      }
+    }
+
+    function renderizarTablaCXP() {
+      const tbody = document.getElementById("tablaCXP");
+      if (!tbody) return;
+      
+      tbody.innerHTML = "";
+      let totalDeudaUSD = 0;
+
+      if (!dbCXP || dbCXP.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-gray-400">No hay cuentas por pagar registradas.</td></tr>`;
+      } else {
+        dbCXP.forEach(c => {
+          const saldoUSD = Number(c.saldoPendienteUSD || 0);
+          const montoTotalUSD = Number(c.montoTotalUSD || 0);
+
+          if (c.estado === "PENDIENTE") {
+            totalDeudaUSD += saldoUSD;
+          }
+
+          const saldoBs = (saldoUSD * tasaBCVActual).toFixed(2);
+
+          const tr = document.createElement("tr");
+          tr.className = "border-b hover:bg-blue-50/50 transition";
+          tr.innerHTML = `
+            <td class="p-2.5 text-gray-600 whitespace-nowrap">${c.fecha || 'N/A'}</td>
+            <td class="p-2.5 font-bold text-gray-800">${c.proveedor || 'General'}</td>
+            <td class="p-2.5 font-mono text-blue-700 font-bold">${c.nroFactura || '-'}</td>
+            <td class="p-2.5 text-gray-700">${c.concepto || '-'}</td>
+            <td class="p-2.5 text-right font-semibold text-gray-700">$${montoTotalUSD.toFixed(2)}</td>
+            <td class="p-2.5 text-right font-black text-red-600">$${saldoUSD.toFixed(2)}</td>
+            <td class="p-2.5 text-right font-black text-slate-800 whitespace-nowrap">${formatearBS(saldoBs)}</td>
+            <td class="p-2.5 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${c.estado === 'PENDIENTE' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-green-100 text-green-800 border border-green-300'}">
+                ${c.estado}
+              </span>
+            </td>
+            <td class="p-2.5 text-center">
+              ${c.estado === 'PENDIENTE' 
+                ? `<button onclick="abrirModalAbonarCXP('${c.idCXP}')" class="bg-green-600 hover:bg-green-700 text-white font-bold px-2.5 py-1 rounded-lg text-xs shadow cursor-pointer transition">💵 Pagar</button>` 
+                : '<span class="text-xs font-bold text-emerald-600">✅ Saldado</span>'}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const elemUSD = document.getElementById("totalDeudaCXPUSD");
+      const elemBS = document.getElementById("totalDeudaCXPBS");
+      if (elemUSD) elemUSD.innerText = `$${totalDeudaUSD.toFixed(2)}`;
+      if (elemBS) elemBS.innerText = formatearBS(totalDeudaUSD * tasaBCVActual);
+    }
+
+    function abrirModalNuevoProveedor() {
+      document.getElementById("provID").value = "";
+      document.getElementById("provNombre").value = "";
+      document.getElementById("provTelefono").value = "";
+      document.getElementById("provDireccion").value = "";
+      document.getElementById("modalProveedor").classList.remove("hidden");
+    }
+
+    function abrirModalNuevaCXP() {
+      const sel = document.getElementById("cxpSelectProveedor");
+      sel.innerHTML = '<option value="">-- Selecciona un proveedor --</option>';
+      dbProveedores.forEach(p => {
+        sel.innerHTML += `<option value="${p.id}" data-nombre="${p.nombre}">${p.nombre} (${p.id})</option>`;
+      });
+      document.getElementById("cxpNroFactura").value = "";
+      document.getElementById("cxpMontoUSD").value = "";
+      document.getElementById("cxpMontoBs").value = "Bs. 0,00";
+      document.getElementById("cxpConcepto").value = "";
+      document.getElementById("modalNuevaCXP").classList.remove("hidden");
+    }
+
+    function recalcularMontoCXPBs() {
+      const usd = parseFloat(document.getElementById("cxpMontoUSD").value) || 0;
+      const bs = (usd * tasaBCVActual).toFixed(2);
+      document.getElementById("cxpMontoBs").value = `Bs. ${Number(bs).toLocaleString('es-VE', {minimumFractionDigits: 2})}`;
+    }
+
+    async function guardarProveedorForm(e) {
+      e.preventDefault();
+      const prov = {
+        id: document.getElementById("provID").value.trim(),
+        nombre: document.getElementById("provNombre").value.trim(),
+        telefono: document.getElementById("provTelefono").value.trim(),
+        direccion: document.getElementById("provDireccion").value.trim()
+      };
+
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "registrarProveedor", proveedor: prov })
+      }).then(r => r.json());
+
+      alert(res.message);
+      if (res.status === "success") {
+        cerrarModal("modalProveedor");
+        cargarCXP();
+      }
+    }
+
+    async function guardarNuevaCXP(e) {
+      e.preventDefault();
+      const sel = document.getElementById("cxpSelectProveedor");
+      const opt = sel.options[sel.selectedIndex];
+
+      if (!sel.value) return alert("Por favor selecciona un proveedor");
+
+      const cxpData = {
+        idProveedor: sel.value,
+        proveedor: opt.getAttribute("data-nombre"),
+        nroFactura: document.getElementById("cxpNroFactura").value.trim(),
+        montoTotalUSD: parseFloat(document.getElementById("cxpMontoUSD").value),
+        montoTotalBs: parseFloat(document.getElementById("cxpMontoUSD").value) * tasaBCVActual,
+        concepto: document.getElementById("cxpConcepto").value.trim(),
+        usuario: usuarioActual ? usuarioActual.nombre : "Admin"
+      };
+
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "registrarCuentaPorPagar", cxp: cxpData })
+      }).then(r => r.json());
+
+      alert(res.message);
+      if (res.status === "success") {
+        cerrarModal("modalNuevaCXP");
+        cargarCXP();
+      }
+    }
+
+    function abrirModalAbonarCXP(idCXP) {
+      cxpSeleccionada = dbCXP.find(c => c.idCXP === idCXP);
+      if (!cxpSeleccionada) return;
+
+      document.getElementById("abonoIDCXP").value = idCXP;
+      document.getElementById("infoDeudaAbono").innerText = `Proveedor: ${cxpSeleccionada.proveedor} | Saldo Pendiente: $${cxpSeleccionada.saldoPendienteUSD.toFixed(2)}`;
+      document.getElementById("abonoMontoUSD").value = cxpSeleccionada.saldoPendienteUSD;
+      recalcularAbonoProveedorBs();
+      document.getElementById("modalAbonarCXP").classList.remove("hidden");
+    }
+
+    function recalcularAbonoProveedorBs() {
+      const usd = parseFloat(document.getElementById("abonoMontoUSD").value) || 0;
+      const bs = (usd * tasaBCVActual).toFixed(2);
+      document.getElementById("abonoMontoBs").value = `Bs. ${Number(bs).toLocaleString('es-VE', {minimumFractionDigits: 2})}`;
+    }
+
+    async function procesarAbonoProveedor(e) {
+      e.preventDefault();
+      const montoUSD = parseFloat(document.getElementById("abonoMontoUSD").value);
+
+      if (montoUSD > cxpSeleccionada.saldoPendienteUSD + 0.05) {
+        return alert("El monto a abonar no puede ser mayor al saldo pendiente.");
+      }
+
+      const abonoData = {
+        idCXP: cxpSeleccionada.idCXP,
+        montoUSD: montoUSD,
+        montoBs: montoUSD * tasaBCVActual,
+        metodoPago: document.getElementById("abonoMetodo").value,
+        referencia: document.getElementById("abonoReferencia").value.trim(),
+        usuario: usuarioActual ? usuarioActual.nombre : "Admin"
+      };
+
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "registrarAbonoProveedor", abono: abonoData })
+      }).then(r => r.json());
+
+      alert(res.message);
+      if (res.status === "success") {
+        cerrarModal("modalAbonarCXP");
+        cargarCXP();
+      }
+    }
+
+    function cerrarModal(idModal) {
+      document.getElementById(idModal).classList.add("hidden");
+    }
+
+    function normalizarId(id) {
+      if (!id) return "";
+      const s = id.toString().trim();
+      const numOnly = s.replace(/\D/g, "");
+      return numOnly ? parseInt(numOnly, 10).toString() : s.toLowerCase();
+    }
+
+    function obtenerAbonosDeVenta(idVenta) {
+      const idNorm = normalizarId(idVenta);
+      return dbAbonos.filter(a => {
+        const aNorm = normalizarId(a.idVenta);
+        return aNorm === idNorm || (a.idVenta || "").toString().trim().toLowerCase() === (idVenta || "").toString().trim().toLowerCase();
+      });
+    }
+
+    function abrirModalHistorialAbonos(idVenta) {
+      const venta = dbVentas.find(v => (v.idVenta || "").toString().trim() === idVenta.toString().trim());
+      if (!venta) return alert("Venta no encontrada.");
+      
+      ventaHistorialSeleccionada = venta;
+      const abonosVenta = obtenerAbonosDeVenta(idVenta);
+      const totalUSD = Number(venta.totalUSD || 0);
+      const totalAbonadoUSD = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
+      const deudaRestanteUSD = Math.max(0, totalUSD - totalAbonadoUSD);
+
+      document.getElementById("histAbonoSubtitulo").innerText = "Ticket " + venta.idVenta + " - " + (venta.clienteNombre || 'Cliente');
+      document.getElementById("histAbonoTotalFactura").innerText = "$" + totalUSD.toFixed(2);
+      document.getElementById("histAbonoTotalAbonado").innerText = "$" + totalAbonadoUSD.toFixed(2);
+      document.getElementById("histAbonoDeudaRestante").innerText = "$" + deudaRestanteUSD.toFixed(2);
+
+      const tbody = document.getElementById("tablaHistorialAbonosBody");
+      const btnAbonar = document.getElementById("btnAbonarDesdeHistorial");
+      const txtEstado = document.getElementById("histAbonoEstadoTexto");
+
+      if (deudaRestanteUSD <= 0.001) {
+        txtEstado.innerHTML = "✅ <span class='text-emerald-600 font-bold'>Cuenta totalmente saldada</span>";
+        if (btnAbonar) btnAbonar.classList.add("hidden");
+      } else {
+        txtEstado.innerHTML = "Resta por pagar: <strong class='text-red-600'>$" + deudaRestanteUSD.toFixed(2) + "</strong> (" + formatearBS(deudaRestanteUSD * tasaBCVActual) + ")";
+        if (btnAbonar) btnAbonar.classList.remove("hidden");
+      }
+
+      if (abonosVenta.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400">No se han registrado abonos aún para esta venta.</td></tr>';
+      } else {
+        tbody.innerHTML = abonosVenta.map(a => {
+          const montoUSD = Number(a.montoUSD) || 0;
+          const tasa = Number(a.tasa) || tasaBCVActual;
+          const montoBs = Number(a.montoBs) || (montoUSD * tasa);
+          return `
+            <tr class="hover:bg-blue-50/50">
+              <td class="p-2.5 font-semibold text-gray-800 whitespace-nowrap">${a.fecha ? a.fecha.split(" ")[0] : 'N/A'}</td>
+              <td class="p-2.5 text-gray-700 font-medium">${a.referencia || '-'}</td>
+              <td class="p-2.5 text-gray-500 text-[11px]">${a.usuario || 'Sistema'}</td>
+              <td class="p-2.5 text-right font-black text-emerald-600">$${montoUSD.toFixed(2)}</td>
+              <td class="p-2.5 text-right font-black text-emerald-800 whitespace-nowrap">${formatearBS(montoBs)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById("modalHistorialAbonos").classList.remove("hidden");
+    }
+
+    function cerrarModalHistorialAbonos() {
+      document.getElementById("modalHistorialAbonos").classList.add("hidden");
+      ventaHistorialSeleccionada = null;
+    }
+
+    function ejecutarAbonarDesdeHistorial() {
+      if (!ventaHistorialSeleccionada) return;
+      const idVenta = ventaHistorialSeleccionada.idVenta;
+      const total = ventaHistorialSeleccionada.totalUSD;
+      cerrarModalHistorialAbonos();
+      setTimeout(() => {
+        const deuda = calcularDeudaPendiente(idVenta, total);
+        abrirModalAbono(idVenta, deuda);
+      }, 100);
+    }
 
     function formatearFechaLatina(fechaOriginal) {
       if (!fechaOriginal || fechaOriginal === "N/A") return "N/A";
@@ -1084,30 +1560,50 @@ function ejecutarAbonarDesdeHistorial() {
     }
 
     function cambiarVista(vista) {
-      ['vistaVender', 'vistaVentas', 'vistaProductos', 'vistaClientes', 'vistaUsuarios', 'vistaCobranza'].forEach(id => {
+      ['vistaVender', 'vistaVentas', 'vistaProductos', 'vistaClientes', 'vistaUsuarios', 'vistaCobranza', 'vistaHistorialAbonos', 'vistaCXP'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       });
-      ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios', 'btnNavCobranza'].forEach(id => {
+
+      ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios', 'btnNavCobranza', 'btnNavHistorialAbonos', 'btnNavCXP'].forEach(id => {
         const b = document.getElementById(id);
         if (b) b.className = 'px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
       });
 
       const vistaMap = {
-        vender: 'vistaVender', ventas: 'vistaVentas', productos: 'vistaProductos',
-        clientes: 'vistaClientes', usuarios: 'vistaUsuarios', cobranza: 'vistaCobranza'
-      };
-      const btnMap = {
-        vender: 'btnNavVender', ventas: 'btnNavVentas', productos: 'btnNavProductos',
-        clientes: 'btnNavClientes', usuarios: 'btnNavUsuarios', cobranza: 'btnNavCobranza'
+        vender: 'vistaVender', 
+        ventas: 'vistaVentas', 
+        productos: 'vistaProductos',
+        clientes: 'vistaClientes', 
+        usuarios: 'vistaUsuarios', 
+        cobranza: 'vistaCobranza',
+        historialAbonos: 'vistaHistorialAbonos',
+        cxp: 'vistaCXP'
       };
 
-      if (vistaMap[vista]) document.getElementById(vistaMap[vista]).classList.remove('hidden');
-      if (btnMap[vista]) document.getElementById(btnMap[vista]).className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+      const btnMap = {
+        vender: 'btnNavVender', 
+        ventas: 'btnNavVentas', 
+        productos: 'btnNavProductos',
+        clientes: 'btnNavClientes', 
+        usuarios: 'btnNavUsuarios', 
+        cobranza: 'btnNavCobranza',
+        historialAbonos: 'btnNavHistorialAbonos',
+        cxp: 'btnNavCXP'
+      };
+
+      if (vistaMap[vista] && document.getElementById(vistaMap[vista])) {
+        document.getElementById(vistaMap[vista]).classList.remove('hidden');
+      }
+      if (btnMap[vista] && document.getElementById(btnMap[vista])) {
+        document.getElementById(btnMap[vista]).className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+      }
 
       if (vista === 'ventas') renderTablasGestionVentas();
       if (vista === 'cobranza') renderTablaCobranza();
       if (vista === 'productos') recalcularValoresProducto();
+      if (vista === 'historialAbonos') renderTablaHistorialAbonos();
+      if (vista === 'cxp' && typeof cargarCXP === 'function') cargarCXP();
     }
 
     async function cargarDatos() {
@@ -1121,9 +1617,6 @@ function ejecutarAbonarDesdeHistorial() {
         dbUsuarios = data.usuarios || [];
         dbVentas = (data.ventas || []).reverse();
         dbAbonos = data.abonos || [];
-
-        // Reconciliar con anulaciones locales persistidas
-       
 
         if (data.tasaBCV && data.tasaBCV.tasa) {
           tasaBCVActual = Number(data.tasaBCV.tasa);
@@ -1150,8 +1643,93 @@ function ejecutarAbonarDesdeHistorial() {
         filtrarVentas();
         renderTablaCobranza();
         actualizarLabelProximoTicket();
+        if (typeof renderTablaHistorialAbonos === 'function') renderTablaHistorialAbonos();
+        if (typeof cargarCXP === 'function') await cargarCXP();
       } catch (err) {
         console.warn("Error cargando datos:", err);
+      }
+    }
+
+    function renderTablaHistorialAbonos() {
+      const tbody = document.getElementById("tablaHistorialAbonosGeneralBody");
+      const filtroTexto = (document.getElementById("filtroTextoAbonos").value || "").toLowerCase().trim();
+      const fIni = document.getElementById("filtroAbonoFechaInicio").value;
+      const fFin = document.getElementById("filtroAbonoFechaFin").value;
+
+      let dIni = fIni ? new Date(fIni.split("-")[0], fIni.split("-")[1] - 1, fIni.split("-")[2], 0, 0, 0) : null;
+      let dFin = fFin ? new Date(fFin.split("-")[0], fFin.split("-")[1] - 1, fFin.split("-")[2], 23, 59, 59) : null;
+
+      const abonosFiltrados = dbAbonos.filter(a => {
+        const venta = dbVentas.find(v => normalizarId(v.idVenta) === normalizarId(a.idVenta)) || {};
+        const clienteNombre = (venta.clienteNombre || "").toLowerCase();
+        const ticketId = (a.idVenta || "").toLowerCase();
+
+        const cumpleTexto = !filtroTexto || ticketId.includes(filtroTexto) || clienteNombre.includes(filtroTexto);
+        
+        let cumpleFecha = true;
+        if (dIni || dFin) {
+          const fechaCorta = a.fecha.split(" ")[0]; 
+          const fObj = parsearFechaVenta(fechaCorta);
+          if (fObj) {
+            if (dIni && fObj < dIni) cumpleFecha = false;
+            if (dFin && fObj > dFin) cumpleFecha = false;
+          }
+        }
+        return cumpleTexto && cumpleFecha;
+      });
+
+      if (abonosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400">No se encontraron abonos para esta búsqueda.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = abonosFiltrados.map(a => {
+        const venta = dbVentas.find(v => normalizarId(v.idVenta) === normalizarId(a.idVenta)) || {};
+        const clienteStr = venta.clienteNombre || "Cliente General";
+        
+        return `
+          <tr class="hover:bg-blue-50 border-b transition">
+            <td class="p-3 text-gray-600 whitespace-nowrap">${a.fecha.split(" ")[0]}</td>
+            <td class="p-3 font-mono font-bold text-blue-700">${a.idVenta}</td>
+            <td class="p-3 font-bold text-gray-800">${clienteStr}</td>
+            <td class="p-3 text-gray-700">${a.referencia || '-'}</td>
+            <td class="p-3 text-right font-black text-emerald-600">$${Number(a.montoUSD).toFixed(2)}</td>
+            <td class="p-3 text-right font-black text-emerald-800 whitespace-nowrap">${formatearBS(Number(a.montoBs))}</td>
+            <td class="p-3 text-center">
+              <button onclick="eliminarAbonoGeneral('${a.idAbono}')" title="Eliminar este abono" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition">
+                🗑️ Eliminar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function limpiarFiltrosAbonos() {
+      document.getElementById("filtroTextoAbonos").value = "";
+      document.getElementById("filtroAbonoFechaInicio").value = "";
+      document.getElementById("filtroAbonoFechaFin").value = "";
+      renderTablaHistorialAbonos();
+    }
+
+    async function eliminarAbonoGeneral(idAbono) {
+      if (!confirm("⚠️ ¿Estás seguro de eliminar este abono?\n\nAl eliminarlo, la deuda del cliente volverá a subir automáticamente en la sección de cobranzas.")) return;
+      
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "eliminarAbono", idAbono: idAbono })
+        });
+        const data = await res.json();
+        
+        if (data.status === "error") {
+          alert("Error: " + data.message);
+        } else {
+          alert("✅ Abono eliminado con éxito.");
+          await cargarDatos();
+        }
+      } catch (error) {
+        alert("Hubo un error de conexión al procesar la eliminación.");
       }
     }
 
@@ -1200,7 +1778,6 @@ function ejecutarAbonarDesdeHistorial() {
       } catch (e) {}
     }
 
-    // CALCULAR DEUDA POR VENTA
     function calcularDeudaPendiente(idVenta, totalUSD) {
       const abonosVenta = dbAbonos.filter(a => (a.idVenta || "").toString().trim() === idVenta.toString().trim());
       const totalAbonado = abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
@@ -1212,151 +1789,144 @@ function ejecutarAbonarDesdeHistorial() {
       return abonosVenta.reduce((sum, a) => sum + Number(a.montoUSD || 0), 0);
     }
 
-    // ==========================================================
-    // RENDER TABLA DE COBRANZAS CON FILTRO DE FECHAS Y TOTAL ACUMULADO
-    // ==========================================================
     function renderTablaCobranza() {
-  const tbody = document.getElementById("tablaCobranzaBody");
-  const filtro = (document.getElementById("filtroCobranza").value || "").toLowerCase().trim();
-  const fechaInicioVal = document.getElementById("filtroCobranzaFechaInicio").value;
-  const fechaFinVal = document.getElementById("filtroCobranzaFechaFin").value;
+      const tbody = document.getElementById("tablaCobranzaBody");
+      const filtro = (document.getElementById("filtroCobranza").value || "").toLowerCase().trim();
+      const fechaInicioVal = document.getElementById("filtroCobranzaFechaInicio").value;
+      const fechaFinVal = document.getElementById("filtroCobranzaFechaFin").value;
 
-  let fechaInicio = null;
-  let fechaFin = null;
-  if (fechaInicioVal) {
-    const [a, m, d] = fechaInicioVal.split("-").map(Number);
-    fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
-  }
-  if (fechaFinVal) {
-    const [a, m, d] = fechaFinVal.split("-").map(Number);
-    fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
-  }
-
-  // Todas las ventas a crédito (excluyendo anuladas)
-  const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito" && v.estado !== "Anulada");
-
-  // Filtrar créditos activos
-  const creditosConDeuda = todosCreditos.map(venta => {
-    const deudaRestanteUSD = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
-    const totalAbonadoUSD = calcularTotalAbonadoVenta(venta.idVenta);
-    return {
-      ...venta,
-      deudaUSD: deudaRestanteUSD,
-      deudaBS: deudaRestanteUSD * tasaBCVActual,
-      abonadoUSD: totalAbonadoUSD
-    };
-  });
-
-  // Cálculo del SALDO GENERAL (Sin filtros)
-  const deudaGeneralUSD = creditosConDeuda.reduce((acc, c) => acc + c.deudaUSD, 0);
-  const deudaGeneralBS = deudaGeneralUSD * tasaBCVActual;
-
-  // Actualizar badge en header nav si existe
-  const badgeNav = document.getElementById("badgeDeudaNav");
-  if (badgeNav) {
-    if (deudaGeneralUSD > 0) {
-      badgeNav.innerText = "$" + deudaGeneralUSD.toFixed(2);
-      badgeNav.classList.remove("hidden");
-    } else {
-      badgeNav.classList.add("hidden");
-    }
-  }
-
-  // Aplicar filtros de búsqueda y fechas
-  const creditosFiltrados = creditosConDeuda.filter(c => {
-    if (c.deudaUSD <= 0.001) return false; // Solo pendientes
-
-    const coincideTexto = !filtro || 
-      c.idVenta.toLowerCase().includes(filtro) || 
-      (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro)) ||
-      (c.clienteId && c.clienteId.toLowerCase().includes(filtro));
-
-    let coincideFecha = true;
-    if (fechaInicio || fechaFin) {
-      const fObj = parsearFechaVenta(c.fecha);
-      if (fObj) {
-        if (fechaInicio && fObj < fechaInicio) coincideFecha = false;
-        if (fechaFin && fObj > fechaFin) coincideFecha = false;
+      let fechaInicio = null;
+      let fechaFin = null;
+      if (fechaInicioVal) {
+        const [a, m, d] = fechaInicioVal.split("-").map(Number);
+        fechaInicio = new Date(a, m - 1, d, 0, 0, 0);
       }
+      if (fechaFinVal) {
+        const [a, m, d] = fechaFinVal.split("-").map(Number);
+        fechaFin = new Date(a, m - 1, d, 23, 59, 59, 999);
+      }
+
+      const todosCreditos = dbVentas.filter(v => v.tipo === "Crédito" && v.estado !== "Anulada");
+
+      const creditosConDeuda = todosCreditos.map(venta => {
+        const deudaRestanteUSD = calcularDeudaPendiente(venta.idVenta, venta.totalUSD);
+        const totalAbonadoUSD = calcularTotalAbonadoVenta(venta.idVenta);
+        return {
+          ...venta,
+          deudaUSD: deudaRestanteUSD,
+          deudaBS: deudaRestanteUSD * tasaBCVActual,
+          abonadoUSD: totalAbonadoUSD
+        };
+      });
+
+      const deudaGeneralUSD = creditosConDeuda.reduce((acc, c) => acc + c.deudaUSD, 0);
+      const deudaGeneralBS = deudaGeneralUSD * tasaBCVActual;
+
+      const badgeNav = document.getElementById("badgeDeudaNav");
+      if (badgeNav) {
+        if (deudaGeneralUSD > 0) {
+          badgeNav.innerText = "$" + deudaGeneralUSD.toFixed(2);
+          badgeNav.classList.remove("hidden");
+        } else {
+          badgeNav.classList.add("hidden");
+        }
+      }
+
+      const creditosFiltrados = creditosConDeuda.filter(c => {
+        if (c.deudaUSD <= 0.001) return false;
+
+        const coincideTexto = !filtro || 
+          c.idVenta.toLowerCase().includes(filtro) || 
+          (c.clienteNombre && c.clienteNombre.toLowerCase().includes(filtro)) ||
+          (c.clienteId && c.clienteId.toLowerCase().includes(filtro));
+
+        let coincideFecha = true;
+        if (fechaInicio || fechaFin) {
+          const fObj = parsearFechaVenta(c.fecha);
+          if (fObj) {
+            if (fechaInicio && fObj < fechaInicio) coincideFecha = false;
+            if (fechaFin && fObj > fechaFin) coincideFecha = false;
+          }
+        }
+        return coincideTexto && coincideFecha;
+      });
+
+      const totalFiltradoUSD = creditosFiltrados.reduce((acc, c) => acc + c.deudaUSD, 0);
+      const totalFiltradoBS = totalFiltradoUSD * tasaBCVActual;
+
+      const badgeTipo = document.getElementById("badgeTipoCobranza");
+      const subtitulo = document.getElementById("subtituloCobranza");
+      const tituloResumen = document.getElementById("tituloResumenCobranza");
+      const descResumen = document.getElementById("descResumenCobranza");
+      const txtTotalUSD = document.getElementById("totalCobranzaUSD");
+      const txtTotalBS = document.getElementById("totalCobranzaBS");
+
+      const hayFiltroActivo = Boolean(filtro || fechaInicioVal || fechaFinVal);
+
+      if (hayFiltroActivo) {
+        const clientesSet = new Set(creditosFiltrados.map(c => c.clienteNombre || 'Cliente'));
+        const listaClientes = Array.from(clientesSet);
+
+        badgeTipo.className = "bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+        badgeTipo.innerText = "FILTRO ACTIVO";
+        subtitulo.innerText = creditosFiltrados.length + " ticket(s) pendiente(s)";
+
+        if (listaClientes.length === 1) {
+          tituloResumen.innerHTML = "<span>Saldo Acumulado: <strong>" + listaClientes[0] + "</strong></span>";
+        } else {
+          tituloResumen.innerHTML = "<span>Total Acumulado de Resultados Filtrados</span>";
+        }
+
+        descResumen.innerText = "Suma de deudas pendientes para la búsqueda '" + (filtro || 'Rango de fechas') + "'.";
+        txtTotalUSD.innerText = "$" + totalFiltradoUSD.toFixed(2);
+        txtTotalBS.innerText = formatearBS(totalFiltradoBS);
+      } else {
+        badgeTipo.className = "bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
+        badgeTipo.innerText = "SALDO PENDIENTE GENERAL";
+        subtitulo.innerText = "Estado global de deudas";
+        tituloResumen.innerHTML = "<span>Cuentas por Cobrar (Créditos)</span>";
+        descResumen.innerText = "Suma total acumulada de saldos pendientes de todos los clientes a tasa oficial BCV.";
+        txtTotalUSD.innerText = "$" + deudaGeneralUSD.toFixed(2);
+        txtTotalBS.innerText = formatearBS(deudaGeneralBS);
+      }
+
+      if (creditosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">No hay deudas pendientes para esta búsqueda o fecha.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = creditosFiltrados.map(v => `
+        <tr class="hover:bg-blue-50 border-b transition">
+          <td class="p-3 font-mono font-bold text-blue-700">${v.idVenta}</td>
+          <td class="p-3 text-gray-600 whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+          <td class="p-3">
+            <div class="font-bold text-gray-800">${v.clienteNombre || 'Cliente'}</div>
+            <div class="text-[10px] text-gray-400 font-mono">${v.clienteId || ''}</div>
+          </td>
+          <td class="p-3 text-right font-medium text-gray-700">$${Number(v.totalUSD).toFixed(2)}</td>
+          <td class="p-3 text-right font-medium text-emerald-700">$${v.abonadoUSD.toFixed(2)}</td>
+          <td class="p-3 text-right font-black text-red-600 bg-red-50/40 text-sm">$${v.deudaUSD.toFixed(2)}</td>
+          <td class="p-3 text-right font-black text-emerald-700 bg-emerald-50/40 whitespace-nowrap text-sm">${formatearBS(v.deudaBS)}</td>
+          <td class="p-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button 
+                ${v.abonadoUSD > 0 ? `onclick="abrirModalHistorialAbonos('${v.idVenta}')"` : `disabled`} 
+                title="${v.abonadoUSD > 0 ? 'Ver historial de abonos' : 'Sin abonos registrados'}" 
+                class="${v.abonadoUSD > 0 
+                  ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 active:scale-95 cursor-pointer' 
+                  : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-70'} 
+                  px-2.5 py-1.5 rounded-lg shadow-xs font-bold text-xs transition flex items-center gap-1">
+                <span>👁️ Abonos</span>
+              </button>
+              <button onclick="abrirModalAbono('${v.idVenta}', ${v.deudaUSD})" title="Registrar nuevo abono" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-2.5 py-1.5 rounded-lg shadow font-bold text-xs cursor-pointer transition">
+                ➕ Abonar
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
     }
-    return coincideTexto && coincideFecha;
-  });
 
-  // Totales de la búsqueda/filtro actual
-  const totalFiltradoUSD = creditosFiltrados.reduce((acc, c) => acc + c.deudaUSD, 0);
-  const totalFiltradoBS = totalFiltradoUSD * tasaBCVActual;
-
-  // Actualizar Tarjeta de Resumen (General vs Cliente Buscado)
-  const badgeTipo = document.getElementById("badgeTipoCobranza");
-  const subtitulo = document.getElementById("subtituloCobranza");
-  const tituloResumen = document.getElementById("tituloResumenCobranza");
-  const descResumen = document.getElementById("descResumenCobranza");
-  const txtTotalUSD = document.getElementById("totalCobranzaUSD");
-  const txtTotalBS = document.getElementById("totalCobranzaBS");
-
-  const hayFiltroActivo = Boolean(filtro || fechaInicioVal || fechaFinVal);
-
-  if (hayFiltroActivo) {
-    const clientesSet = new Set(creditosFiltrados.map(c => c.clienteNombre || 'Cliente'));
-    const listaClientes = Array.from(clientesSet);
-
-    badgeTipo.className = "bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
-    badgeTipo.innerText = "FILTRO ACTIVO";
-    subtitulo.innerText = creditosFiltrados.length + " ticket(s) pendiente(s)";
-
-    if (listaClientes.length === 1) {
-      tituloResumen.innerHTML = "<span>Saldo Acumulado: <strong>" + listaClientes[0] + "</strong></span>";
-    } else {
-      tituloResumen.innerHTML = "<span>Total Acumulado de Resultados Filtrados</span>";
-    }
-
-    descResumen.innerText = "Suma de deudas pendientes para la búsqueda '" + (filtro || 'Rango de fechas') + "'.";
-    txtTotalUSD.innerText = "$" + totalFiltradoUSD.toFixed(2);
-    txtTotalBS.innerText = formatearBS(totalFiltradoBS);
-  } else {
-    badgeTipo.className = "bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full";
-    badgeTipo.innerText = "SALDO PENDIENTE GENERAL";
-    subtitulo.innerText = "Estado global de deudas";
-    tituloResumen.innerHTML = "<span>Cuentas por Cobrar (Créditos)</span>";
-    descResumen.innerText = "Suma total acumulada de saldos pendientes de todos los clientes a tasa oficial BCV.";
-    txtTotalUSD.innerText = "$" + deudaGeneralUSD.toFixed(2);
-    txtTotalBS.innerText = formatearBS(deudaGeneralBS);
-  }
-
-  // Llenar tabla
-  if (creditosFiltrados.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="p-8 text-center text-gray-400">No hay deudas pendientes para esta búsqueda o fecha.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = creditosFiltrados.map(v => `
-    <tr class="hover:bg-blue-50 border-b transition">
-      <td class="p-3 font-mono font-bold text-blue-700">${v.idVenta}</td>
-      <td class="p-3 text-gray-600 whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
-      <td class="p-3">
-        <div class="font-bold text-gray-800">${v.clienteNombre || 'Cliente'}</div>
-        <div class="text-[10px] text-gray-400 font-mono">${v.clienteId || ''}</div>
-      </td>
-      <td class="p-3 text-right font-medium text-gray-700">$${Number(v.totalUSD).toFixed(2)}</td>
-      <td class="p-3 text-right font-medium text-emerald-700">$${v.abonadoUSD.toFixed(2)}</td>
-      <td class="p-3 text-right font-black text-red-600 bg-red-50/40 text-sm">$${v.deudaUSD.toFixed(2)}</td>
-      <td class="p-3 text-right font-black text-emerald-700 bg-emerald-50/40 whitespace-nowrap text-sm">${formatearBS(v.deudaBS)}</td>
-      <td class="p-3 text-center">
-        <div class="flex items-center justify-center gap-1.5">
-          <!-- Botón Ver Abonos -->
-          <button onclick="abrirModalHistorialAbonos('${v.idVenta}')" title="Ver historial de abonos" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 active:scale-95 px-2.5 py-1.5 rounded-lg shadow-xs font-bold text-xs cursor-pointer transition flex items-center gap-1">
-            <span>👁️ Abonos</span>
-          </button>
-          
-          <!-- Botón Registrar Abono -->
-          <button onclick="abrirModalAbono('${v.idVenta}', ${v.deudaUSD})" title="Registrar nuevo abono" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white px-2.5 py-1.5 rounded-lg shadow font-bold text-xs cursor-pointer transition">
-            ➕ Abonar
-          </button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
     function limpiarFiltrosCobranza() {
       document.getElementById("filtroCobranza").value = "";
       document.getElementById("filtroCobranzaFechaInicio").value = "";
@@ -1382,6 +1952,9 @@ function ejecutarAbonarDesdeHistorial() {
     }
 
     function abrirModalAbono(idVenta, deudaRestante) {
+      const modalHistorial = document.getElementById("modalHistorialAbonos");
+      if (modalHistorial) modalHistorial.classList.add("hidden");
+
       document.getElementById("abonoIdVenta").value = idVenta;
       deudaAbonoActualUSD = Number(deudaRestante);
       const deudaRestanteBS = deudaAbonoActualUSD * tasaBCVActual;
@@ -1440,7 +2013,6 @@ function ejecutarAbonarDesdeHistorial() {
       }
     }
 
-    // RESTO DE FUNCIONES POS Y CRUD
     function renderProductos() {
       const grid = document.getElementById("gridProductos");
       document.getElementById("cantProductosLabel").innerText = `${productosFiltrados.length} disponibles`;
@@ -1793,67 +2365,70 @@ function ejecutarAbonarDesdeHistorial() {
       imprimirTicket(venta);
     }
 
+    
+
     function renderTablasGestionVentas() {
-      const tbody = document.getElementById("tablaVentasBody");
-      if (!tbody) return;
-      if (!ventasFiltradas) ventasFiltradas = [...dbVentas];
+  const tbody = document.getElementById("tablaVentasBody");
+  if (!tbody) return;
+  if (!ventasFiltradas) ventasFiltradas = [...dbVentas];
 
-      const ventasActivas = ventasFiltradas.filter(v => v.estado !== 'Anulada');
-      const totalUSD = ventasActivas.reduce((acc, v) => acc + (Number(v.totalUSD) || 0), 0);
-      const totalBS = ventasActivas.reduce((acc, v) => acc + (Number(v.totalBS) || 0), 0);
-      const cantContado = ventasActivas.filter(v => v.tipo === 'Contado').length;
-      const cantCredito = ventasActivas.filter(v => v.tipo === 'Crédito').length;
+  const ventasActivas = ventasFiltradas.filter(v => v.estado !== 'Anulada');
+  const totalUSD = ventasActivas.reduce((acc, v) => acc + (Number(v.totalUSD) || 0), 0);
+  const totalBS = ventasActivas.reduce((acc, v) => acc + (Number(v.totalBS) || 0), 0);
+  const cantContado = ventasActivas.filter(v => v.tipo === 'Contado').length;
+  const cantCredito = ventasActivas.filter(v => v.tipo === 'Crédito').length;
 
-      document.getElementById("resumenCantVentas").innerText = ventasActivas.length;
-      document.getElementById("resumenTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
-      document.getElementById("resumenTotalBS").innerText = formatearBS(totalBS);
-      document.getElementById("resumenContado").innerText = `Contado: ${cantContado}`;
-      document.getElementById("resumenCredito").innerText = `Crédito: ${cantCredito}`;
+  document.getElementById("resumenCantVentas").innerText = ventasActivas.length;
+  document.getElementById("resumenTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
+  document.getElementById("resumenTotalBS").innerText = formatearBS(totalBS);
+  document.getElementById("resumenContado").innerText = `Contado: ${cantContado}`;
+  document.getElementById("resumenCredito").innerText = `Crédito: ${cantCredito}`;
 
-      if (ventasFiltradas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400">No hay ventas registradas</td></tr>';
-        return;
-      }
+  if (ventasFiltradas.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400">No hay ventas registradas</td></tr>';
+    return;
+  }
 
-      tbody.innerHTML = ventasFiltradas.map(v => {
-        const esAnulada = v.estado === 'Anulada';
-        const esAdmin = usuarioActual && (usuarioActual.role === 'admin' || usuarioActual.roll === 'admin');
-        const esDeHoy = esFechaDeHoy(v.fecha);
-        const puedeAnular = !esAnulada && esAdmin && esDeHoy;
+  tbody.innerHTML = ventasFiltradas.map(v => {
+    const esAnulada = v.estado === 'Anulada';
+    const esAdmin = usuarioActual && (usuarioActual.role === 'admin' || usuarioActual.roll === 'admin');
+    const esDeHoy = esFechaDeHoy(v.fecha);
+    const puedeAnular = !esAnulada && esAdmin && esDeHoy;
 
-        let tituloAnular = "Anular Venta y Devolver Stock";
-        if (!esAdmin) tituloAnular = "Solo Administrador puede anular ventas";
-        else if (!esDeHoy) tituloAnular = "Solo se pueden anular ventas del día en curso";
+    let tituloAnular = "Anular Venta y Devolver Stock";
+    if (!esAdmin) tituloAnular = "Solo Administrador puede anular ventas";
+    else if (!esDeHoy) tituloAnular = "Solo se pueden anular ventas del día en curso";
 
-        return `
-        <tr class="hover:bg-blue-50 border-b ${esAnulada ? 'bg-red-50/50 opacity-75' : ''}">
-          <td class="p-2.5 font-mono font-bold ${esAnulada ? 'text-red-700 line-through' : 'text-blue-700'}">
-            ${v.idVenta}
-            ${esAnulada ? '<span class="ml-1 text-[9px] bg-red-100 text-red-700 px-1 rounded font-bold uppercase">Anulada</span>' : ''}
-          </td>
-          <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
-          <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
-          <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
-          <td class="p-2.5 text-center">
-            <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${v.tipo}</span>
-          </td>
-          <td class="p-2.5 text-[11px] text-gray-600">
-            ${v.desglosePago || (v.tipo === 'Crédito' ? 'Pendiente por cobrar' : 'Contado')}
-            ${esAnulada && v.motivoAnulacion ? '<div class="text-[10px] text-red-600 font-semibold mt-0.5">Motivo: ' + v.motivoAnulacion + '</div>' : ''}
-          </td>
-          <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-gray-900'}">$${Number(v.totalUSD).toFixed(2)}</td>
-          <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-emerald-700'} whitespace-nowrap">${formatearBS(v.totalBS)}</td>
-          <td class="p-2.5 text-center flex items-center justify-center gap-1">
-            <button onclick="imprimirTicketPorId('${v.idVenta}')" title="Reimprimir Ticket" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer">🖨️</button>
-            ${!esAnulada ? (
-              puedeAnular 
-                ? '<button onclick="anularVentaPorId(\'' + v.idVenta + '\')" title="' + tituloAnular + '" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded text-xs font-bold cursor-pointer transition">✕ Anular</button>'
-                : '<button disabled title="' + tituloAnular + '" class="bg-gray-100 text-gray-400 border border-gray-200 px-2 py-1 rounded text-xs cursor-not-allowed opacity-50">✕ Anular</button>'
-            ) : ''}
-          </td>
-        </tr>
-      `;}).join('');
-    }
+    return `
+    <tr class="hover:bg-blue-50 border-b ${esAnulada ? 'bg-red-50/50 opacity-75' : ''}">
+      <td class="p-2.5 font-mono font-bold ${esAnulada ? 'text-red-700 line-through' : 'text-blue-700'}">
+        ${v.idVenta}
+        ${esAnulada ? '<span class="ml-1 text-[9px] bg-red-100 text-red-700 px-1 rounded font-bold uppercase">Anulada</span>' : ''}
+      </td>
+      <td class="p-2.5 text-gray-600 text-[11px] whitespace-nowrap">${formatearFechaLatina(v.fecha)}</td>
+      <td class="p-2.5 font-bold text-gray-800">${v.clienteNombre || 'Cliente General'}</td>
+      <td class="p-2.5 text-gray-700">${v.vendedor || 'N/A'}</td>
+      <td class="p-2.5 text-center">
+        <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${v.tipo === 'Contado' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${v.tipo}</span>
+      </td>
+      <td class="p-2.5 text-[11px] text-gray-600">
+        ${v.desglosePago || (v.tipo === 'Crédito' ? 'Pendiente por cobrar' : 'Contado')}
+        ${esAnulada && v.motivoAnulacion ? '<div class="text-[10px] text-red-600 font-semibold mt-0.5">Motivo: ' + v.motivoAnulacion + '</div>' : ''}
+      </td>
+      <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-gray-900'}">$${Number(v.totalUSD).toFixed(2)}</td>
+      <td class="p-2.5 text-right font-bold ${esAnulada ? 'text-gray-400 line-through' : 'text-emerald-700'} whitespace-nowrap">${formatearBS(v.totalBS)}</td>
+      <td class="p-2.5 text-center flex items-center justify-center gap-1">
+        <button onclick="abrirModalDetalleVenta('${v.idVenta}')" title="Ver detalle de productos" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2 py-1 rounded text-xs font-bold cursor-pointer transition">👁️ Ver</button>
+        <button onclick="imprimirTicketPorId('${v.idVenta}')" title="Reimprimir Ticket" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs cursor-pointer">🖨️</button>
+        ${!esAnulada ? (
+          puedeAnular 
+            ? '<button onclick="anularVentaPorId(\'' + v.idVenta + '\')" title="' + tituloAnular + '" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded text-xs font-bold cursor-pointer transition">✕ Anular</button>'
+            : '<button disabled title="' + tituloAnular + '" class="bg-gray-100 text-gray-400 border border-gray-200 px-2 py-1 rounded text-xs cursor-not-allowed opacity-50">✕ Anular</button>'
+        ) : ''}
+      </td>
+    </tr>
+  `;}).join('');
+}
 
     function filtrarVentas() {
       const texto = (document.getElementById("filtroTextoVentas").value || "").toLowerCase().trim();
@@ -1899,11 +2474,10 @@ function ejecutarAbonarDesdeHistorial() {
       }
 
       const motivo = prompt("¿Está seguro de anular la venta " + idVenta + "?\n\nAl anularse se reincorporará el stock vendido al inventario.\n\nIngrese el motivo de la anulación:", "Error en cobro / Devolución");
-      if (motivo === null) return; // Cancelado
+      if (motivo === null) return;
 
       const motivoFinal = motivo.trim() || "Anulada por administrador";
 
-      // 1. Extraer y devolver stock
       let itemsDevolver = [];
       if (Array.isArray(venta.items) && venta.items.length > 0) {
         itemsDevolver = venta.items;
@@ -1917,7 +2491,6 @@ function ejecutarAbonarDesdeHistorial() {
         });
       }
 
-      // Reincorporar stock en dbProductos
       itemsDevolver.forEach(item => {
         const pIndex = dbProductos.findIndex(prod => 
           (item.codigo && prod.Codigo && prod.Codigo.toString() === item.codigo.toString()) ||
@@ -1928,13 +2501,11 @@ function ejecutarAbonarDesdeHistorial() {
         }
       });
 
-      // 2. Marcar venta como Anulada en memoria
       venta.estado = "Anulada";
       venta.motivoAnulacion = motivoFinal;
       venta.usuarioAnulacion = (usuarioActual && usuarioActual.nombre) || "Admin";
       venta.fechaAnulacion = new Date().toLocaleString('es-VE');
 
-      // Guardar en persistencia local de anulaciones para no perderse al recargar/actualizar
       try {
         const anuladasLocales = JSON.parse(localStorage.getItem('imtec_ventas_anuladas') || '{}');
         const idKey = (venta.idVenta || idVenta || '').toString().trim();
@@ -1949,13 +2520,11 @@ function ejecutarAbonarDesdeHistorial() {
         localStorage.setItem('imtec_ventas_anuladas', JSON.stringify(anuladasLocales));
       } catch (e) {}
 
-      // 3. Actualizar UI de inmediato
       filtrarVentas();
       renderProductos();
       renderTablasGestionProductos();
       if (typeof renderTablaCobranza === 'function') renderTablaCobranza();
 
-      // 4. Enviar a backend si hay URL
       let syncStatus = "local";
       if (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL && SCRIPT_URL.trim() !== '') {
         try {
@@ -1986,7 +2555,7 @@ function ejecutarAbonarDesdeHistorial() {
       if (syncStatus === "success") {
         alert("✅ Venta " + idVenta + " ANULADA con éxito.\n\n• Estado actualizado en Google Sheets y en el sistema.\n• Stock reincorporado al inventario.");
       } else if (syncStatus === "error_script") {
-        alert("✅ Venta " + idVenta + " ANULADA en el sistema.\n\n⚠️ ");
+        alert("✅ Venta " + idVenta + " ANULADA en el sistema.");
       } else {
         alert("✅ Venta " + idVenta + " ANULADA.\nSe sumó el stock correspondiente de nuevo al inventario.");
       }
@@ -1998,7 +2567,6 @@ function ejecutarAbonarDesdeHistorial() {
       filtrarVentas();
     }
 
-    // CRUD PRODUCTOS / CLIENTES / USUARIOS
     function actualizarPanelGananciasInformativas() {
       const moneda = document.getElementById("prodMonedaCosto").value;
       const costo = Math.max(0, parseFloat(document.getElementById("prodCosto").value) || 0);
@@ -2142,70 +2710,64 @@ function ejecutarAbonarDesdeHistorial() {
       actualizarPanelGananciasInformativas();
     }
 
-    // GUARDAR PRODUCTO CON ESTADO "Espere Procesando..."
-async function guardarProducto(e) {
-  e.preventDefault();
-  
-  // 1. Obtenemos el botón y cambiamos el texto y estado
-  const btn = document.getElementById("btnSubmitProd");
-  const textoOriginal = modoEdicionProd ? "💾 Guardar Cambios" : "💾 Registrar Producto";
-  
-  btn.disabled = true;
-  btn.innerHTML = "<span>⏳ Espere Procesando...</span>";
-  btn.classList.add("opacity-75", "cursor-not-allowed");
+    async function guardarProducto(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btnSubmitProd");
+      btn.disabled = true;
+      btn.innerHTML = "<span>⏳ Espere Procesando...</span>";
+      btn.classList.add("opacity-75", "cursor-not-allowed");
 
-  const moneda = document.getElementById("prodMonedaCosto").value;
-  let pRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0;
-  let pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+      const moneda = document.getElementById("prodMonedaCosto").value;
+      let pRealUSD = parseFloat(document.getElementById("prodPrecioRealDivisas").value) || 0;
+      let pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
 
-  if (moneda === "Precio Fijo") {
-    pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
-    pRealUSD = tasaBCVActual > 0 ? pBsFinal / tasaBCVActual : pRealUSD;
-  } else {
-    pBsFinal = pRealUSD * tasaBCVActual;
-  }
+      if (moneda === "Precio Fijo") {
+        pBsFinal = parseFloat(document.getElementById("prodPrecioBs").value) || 0;
+        pRealUSD = tasaBCVActual > 0 ? pBsFinal / tasaBCVActual : pRealUSD;
+      } else {
+        pBsFinal = pRealUSD * tasaBCVActual;
+      }
 
-  const payload = {
-    action: modoEdicionProd ? "actualizarProducto" : "registrarProducto",
-    producto: {
-      codigo: document.getElementById("prodCodigo").value.trim(),
-      nombre: document.getElementById("prodNombre").value.trim(),
-      incluir_Costo_en_Bs_o_Divisas: moneda,
-      costo: parseFloat(document.getElementById("prodCosto").value) || 0,
-      unidadesxEmpaque: parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1,
-      impuesto: parseFloat(document.getElementById("prodImpuesto").value) || 0,
-      porcentajeGanar: parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0,
-      precioVtaRealDivisas: Number(pRealUSD.toFixed(2)),
-      precio: Number(pRealUSD.toFixed(2)),
-      precioBs: Number(pBsFinal.toFixed(2)),
-      stock: parseFloat(document.getElementById("prodStock").value) || 0
+      const payload = {
+        action: modoEdicionProd ? "actualizarProducto" : "registrarProducto",
+        producto: {
+          codigo: document.getElementById("prodCodigo").value.trim(),
+          nombre: document.getElementById("prodNombre").value.trim(),
+          incluir_Costo_en_Bs_o_Divisas: moneda,
+          costo: parseFloat(document.getElementById("prodCosto").value) || 0,
+          unidadesxEmpaque: parseFloat(document.getElementById("prodUnidadesEmpaque").value) || 1,
+          impuesto: parseFloat(document.getElementById("prodImpuesto").value) || 0,
+          porcentajeGanar: parseFloat(document.getElementById("prodPorcentajeGanar").value) || 0,
+          precioVtaRealDivisas: Number(pRealUSD.toFixed(2)),
+          precio: Number(pRealUSD.toFixed(2)),
+          precioBs: Number(pBsFinal.toFixed(2)),
+          stock: parseFloat(document.getElementById("prodStock").value) || 0
+        }
+      };
+
+      try {
+        const res = await fetch(SCRIPT_URL, { 
+          method: "POST", 
+          body: JSON.stringify(payload) 
+        });
+        const data = await res.json().catch(() => ({}));
+        
+        if (data && data.status === "error") {
+          alert("Error: " + (data.message || "No se pudo registrar el producto"));
+        } else {
+          alert(modoEdicionProd ? "¡Producto modificado con éxito!" : "¡Producto registrado con éxito!");
+          cancelarEdicionProd();
+          await cargarDatos();
+        }
+      } catch (err) {
+        console.error("Error al guardar producto:", err);
+        alert("Error de conexión al procesar el producto.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = modoEdicionProd ? "💾 Guardar Cambios" : "💾 Registrar Producto";
+        btn.classList.remove("opacity-75", "cursor-not-allowed");
+      }
     }
-  };
-
-  try {
-    const res = await fetch(SCRIPT_URL, { 
-      method: "POST", 
-      body: JSON.stringify(payload) 
-    });
-    const data = await res.json().catch(() => ({}));
-    
-    if (data && data.status === "error") {
-      alert("Error: " + (data.message || "No se pudo registrar el producto"));
-    } else {
-      alert(modoEdicionProd ? "¡Producto modificado con éxito!" : "¡Producto registrado con éxito!");
-      cancelarEdicionProd();
-      await cargarDatos();
-    }
-  } catch (err) {
-    console.error("Error al guardar producto:", err);
-    alert("Error de conexión al procesar el producto.");
-  } finally {
-    // 2. Restauramos el botón pase lo que pase (éxito o error)
-    btn.disabled = false;
-    btn.innerHTML = modoEdicionProd ? "💾 Guardar Cambios" : "💾 Registrar Producto";
-    btn.classList.remove("opacity-75", "cursor-not-allowed");
-  }
-}
 
     function prepararEdicionProd(codigo) {
       const p = dbProductos.find(item => item.Codigo.toString() === codigo.toString());
@@ -2279,116 +2841,86 @@ async function guardarProducto(e) {
       await cargarDatos();
     }
 
+    function renderTablasGestionClientes(filtro = "") {
+      const cont = document.getElementById("listaEdicionClientes");
+      const q = filtro.toLowerCase().trim();
+      const clis = dbClientes.filter(c => c.Nombre.toLowerCase().includes(q) || c.ID.toLowerCase().includes(q));
+      cont.innerHTML = clis.map(c => `
+        <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
+          <div>
+            <div class="font-bold text-gray-800">${c.Nombre}</div>
+            <div class="text-[10px] text-gray-500">ID: ${c.ID} | Tel: ${c.Telefono || 'N/A'}</div>
+          </div>
+          <div class="flex gap-1">
+            <button onclick="prepararEdicionCli('${c.ID}')" title="Modificar datos del cliente" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg cursor-pointer transition">
+              ✏️
+            </button>
+            <button onclick="eliminarCliente('${c.ID}')" title="Eliminar cliente" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg cursor-pointer transition">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function prepararEdicionCli(id) {
+      const cli = dbClientes.find(item => item.ID.toString() === id.toString());
+      if (!cli) return;
+      modoEdicionCli = true;
+      document.getElementById("cliID").value = cli.ID;
+      document.getElementById("cliID").readOnly = true;
+      document.getElementById("cliNombre").value = cli.Nombre;
+      document.getElementById("cliTelefono").value = cli.Telefono || "";
+      document.getElementById("tituloFormCli").innerText = "✏️ Modificar Cliente";
+      document.getElementById("btnSubmitCli").innerText = "💾 Guardar Cambios";
+      document.getElementById("btnCancelCli").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicionCli() {
+      modoEdicionCli = false;
+      document.getElementById("cliID").value = "";
+      document.getElementById("cliID").readOnly = false;
+      document.getElementById("cliNombre").value = "";
+      document.getElementById("cliTelefono").value = "";
+      document.getElementById("tituloFormCli").innerText = "👥 Registrar Cliente";
+      document.getElementById("btnSubmitCli").innerText = "💾 Registrar Cliente";
+      document.getElementById("btnCancelCli").classList.add("hidden");
+    }
+
     async function guardarCliente(e) {
       e.preventDefault();
+      const btn = document.getElementById("btnSubmitCli");
+      btn.disabled = true;
+      btn.innerText = "⏳ Guardando...";
+
       const payload = {
         action: modoEdicionCli ? "actualizarCliente" : "registrarCliente",
         cliente: {
           id: document.getElementById("cliID").value.trim(),
-          nombre: document.getElementById("cliNombre").value,
-          telefono: document.getElementById("cliTelefono").value
+          nombre: document.getElementById("cliNombre").value.trim(),
+          telefono: document.getElementById("cliTelefono").value.trim()
         }
       };
-      await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-      document.getElementById("cliID").value = "";
-      document.getElementById("cliNombre").value = "";
-      document.getElementById("cliTelefono").value = "";
-      await cargarDatos();
+
+      try {
+        const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.status === "error") {
+          alert("Error: " + data.message);
+        } else {
+          alert(modoEdicionCli ? "¡Cliente modificado con éxito!" : "¡Cliente registrado con éxito!");
+          cancelarEdicionCli();
+          await cargarDatos();
+        }
+      } catch (err) {
+        alert("Error de conexión al guardar cliente.");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = modoEdicionCli ? "💾 Guardar Cambios" : "💾 Registrar Cliente";
+      }
     }
 
-    <!-- En tu index.html dentro de renderTablasGestionClientes y scripts: -->
-
-// 1. En la función renderTablasGestionClientes(filtro = ""):
-function renderTablasGestionClientes(filtro = "") {
-  const cont = document.getElementById("listaEdicionClientes");
-  const q = filtro.toLowerCase().trim();
-  const clis = dbClientes.filter(c => c.Nombre.toLowerCase().includes(q) || c.ID.toLowerCase().includes(q));
-  cont.innerHTML = clis.map(c => `
-    <div class="border p-2.5 rounded-xl flex justify-between items-center bg-gray-50 text-xs">
-      <div>
-        <div class="font-bold text-gray-800">${c.Nombre}</div>
-        <div class="text-[10px] text-gray-500">ID: ${c.ID} | Tel: ${c.Telefono || 'N/A'}</div>
-      </div>
-      <div class="flex gap-1">
-        <!-- BOTÓN MODIFICAR CLIENTE -->
-        <button onclick="prepararEdicionCli('${c.ID}')" title="Modificar datos del cliente" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg cursor-pointer transition">
-          ✏️
-        </button>
-        <!-- BOTÓN ELIMINAR CLIENTE -->
-        <button onclick="eliminarCliente('${c.ID}')" title="Eliminar cliente" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg cursor-pointer transition">
-          🗑️
-        </button>
-      </div>
-    </div>
-  `).join('');
-}
-
-// 2. Funciones añadidas en el script para controlar el formulario:
-function prepararEdicionCli(id) {
-  const cli = dbClientes.find(item => item.ID.toString() === id.toString());
-  if (!cli) return;
-  modoEdicionCli = true;
-  document.getElementById("cliID").value = cli.ID;
-  document.getElementById("cliID").readOnly = true; // No modificar cédula/RIF para mantener identidad
-  document.getElementById("cliNombre").value = cli.Nombre;
-  document.getElementById("cliTelefono").value = cli.Telefono || "";
-  document.getElementById("tituloFormCli").innerText = "✏️ Modificar Cliente";
-  document.getElementById("btnSubmitCli").innerText = "💾 Guardar Cambios";
-  document.getElementById("btnCancelCli").classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function cancelarEdicionCli() {
-  modoEdicionCli = false;
-  document.getElementById("cliID").value = "";
-  document.getElementById("cliID").readOnly = false;
-  document.getElementById("cliNombre").value = "";
-  document.getElementById("cliTelefono").value = "";
-  document.getElementById("tituloFormCli").innerText = "👥 Registrar Cliente";
-  document.getElementById("btnSubmitCli").innerText = "💾 Registrar Cliente";
-  document.getElementById("btnCancelCli").classList.add("hidden");
-}
-
-// 3. En guardarCliente(e):
-async function guardarCliente(e) {
-  e.preventDefault();
-  const btn = document.getElementById("btnSubmitCli");
-  btn.disabled = true;
-  btn.innerText = "⏳ Guardando...";
-
-  const payload = {
-    action: modoEdicionCli ? "actualizarCliente" : "registrarCliente",
-    cliente: {
-      id: document.getElementById("cliID").value.trim(),
-      nombre: document.getElementById("cliNombre").value.trim(),
-      telefono: document.getElementById("cliTelefono").value.trim()
-    }
-  };
-
-  try {
-    const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) });
-    const data = await res.json();
-    if (data.status === "error") {
-      alert("Error: " + data.message);
-    } else {
-      alert(modoEdicionCli ? "¡Cliente modificado con éxito!" : "¡Cliente registrado con éxito!");
-      cancelarEdicionCli();
-      await cargarDatos();
-    }
-  } catch (err) {
-    alert("Error de conexión al guardar cliente.");
-  } finally {
-    btn.disabled = false;
-    btn.innerText = modoEdicionCli ? "💾 Guardar Cambios" : "💾 Registrar Cliente";
-  }
-}
-
-
-
-
-
-
-    
     async function eliminarCliente(id) {
       if (!confirm(`¿Eliminar cliente ${id}?`)) return;
       await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "eliminarCliente", id }) });
@@ -2481,6 +3013,5 @@ async function guardarCliente(e) {
 
     comprobarSesionExistente();
   </script>
-  
 </body>
 </html>
