@@ -21,12 +21,22 @@
     * { -webkit-tap-highlight-color: transparent; }
     @media print {
       body * { visibility: hidden !important; }
+      
+      /* Ticket de Venta */
       #ticketTermicoContainer, #ticketTermicoContainer * { visibility: visible !important; }
       #ticketTermicoContainer {
         position: absolute; left: 0; top: 0; width: 72mm;
         font-family: 'Courier New', Courier, monospace; font-size: 11px;
         color: #000; background: white; padding: 2mm; margin: 0;
       }
+      
+      /* Etiqueta de Precio */
+      #etiquetaPrecioContainer, #etiquetaPrecioContainer * { visibility: visible !important; }
+      #etiquetaPrecioContainer {
+        position: absolute; left: 0; top: 0; width: 72mm;
+        color: #000; background: white; padding: 2mm; margin: 0;
+      }
+      
       @page { size: 80mm auto; margin: 0; }
     }
   </style>
@@ -59,58 +69,77 @@
     </div>
   </div>
 
-  <!-- 2. HEADER -->
-  <header class="bg-blue-600 text-white p-3 sm:p-4 font-bold flex flex-col md:flex-row justify-between items-center shadow-md gap-2.5 sticky top-0 z-30">
-    <div class="flex items-center justify-between w-full md:w-auto">
-      <div class="flex items-center gap-2 cursor-pointer" onclick="cambiarVista('vender')">
-        <span class="tracking-wide text-2xl font-black">iMtec</span>
-        <span class="bg-blue-800 text-[10px] uppercase font-bold px-2 py-0.5 rounded text-blue-200">POS</span>
-      </div>
-      <div class="flex md:hidden items-center gap-2">
-        <div class="bg-blue-900 border border-blue-400/60 px-2.5 py-1 rounded-lg text-xs flex items-center gap-1 cursor-pointer" onclick="cambiarTasaBCVManual()">
-          <span class="text-blue-200">BCV:</span>
-          <span id="tasaBCVHeaderValMovil" class="font-bold text-amber-300">Bs. 50,00</span>
+  <!-- 2. HEADER UNIFICADO Y ADAPTABLE -->
+  <header class="bg-blue-600 text-white shadow-md sticky top-0 z-30">
+    <!-- FILA PRINCIPAL: Logo, Navegación PC y Botones de Control -->
+    <div class="max-w-7xl mx-auto px-3 py-2 flex items-center justify-between gap-2">
+      
+      <!-- LOGO -->
+<div class="flex items-center gap-1 sm:gap-1.5 cursor-pointer shrink-0" onclick="cambiarVista('vender')">
+  <span class="tracking-wide text-xs sm:text-xl font-black">iMtec</span>
+  <span class="bg-blue-800 text-[7px] sm:text-[10px] uppercase font-bold px-1 sm:px-2 py-0.2 sm:py-0.5 rounded text-blue-200">POS</span>
+</div>
+
+      <!-- NAVEGACIÓN EN ESCRITORIO -->
+      <nav class="hidden md:flex items-center gap-1 overflow-x-auto text-xs font-normal">
+        <button onclick="cambiarVista('vender')" id="btnNavVender" class="px-2.5 py-1.5 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">🛒 Vender</button>
+        <button onclick="cambiarVista('ventas')" id="btnNavVentas" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">🧾 Ventas</button>
+        <button onclick="cambiarVista('cobranza')" id="btnNavCobranza" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap flex items-center gap-1">
+          <span>💰 Cobranza</span>
+          <span id="badgeDeudaNav" class="hidden bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.2 rounded-full font-black"></span>
+        </button>
+        <button onclick="cambiarVista('historialAbonos')" id="btnNavHistorialAbonos" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📚 Abonos</button>
+        <button onclick="cambiarVista('cxp')" id="btnNavCXP" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📉 CXP</button>
+        <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👥 Clientes</button>
+        <button onclick="cambiarVista('productos')" id="btnNavProductos" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📦 Productos</button>
+        <button onclick="cambiarVista('usuarios')" id="btnNavUsuarios" class="px-2.5 py-1.5 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👤 Usuarios</button>
+      </nav>
+
+      <!-- BOTONES DE CONTROL Y ESTADO -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Tasa BCV -->
+        <div class="bg-blue-900 border border-blue-400/60 px-2 py-1 rounded-lg text-xs flex items-center gap-1 cursor-pointer shadow-inner" onclick="cambiarTasaBCVManual()">
+          <span class="text-blue-200 text-[10px]">BCV:</span>
+          <span id="tasaBCVHeaderVal" class="font-bold text-amber-300 text-xs">Bs. 50,00</span>
         </div>
-        <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-xs px-2.5 py-1.5 rounded-lg font-bold">🚪</button>
+
+        <!-- Usuario -->
+        <div id="userInfo" class="hidden xl:block text-xs text-right">
+          <div id="userNombre" class="font-bold text-xs leading-none"></div>
+          <div id="userRol" class="text-blue-200 uppercase font-semibold text-[9px]"></div>
+        </div>
+
+        <!-- Indicador Red -->
+        <div id="badgeEstadoRed" class="bg-emerald-600 text-white text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner">
+          <span id="dotRed" class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+          <span id="txtEstadoRed" class="hidden sm:inline">Online</span>
+        </div>
+
+        <!-- Sincronizar -->
+        <button onclick="cargarDatos()" id="btnSyncGlobal" class="bg-blue-800 hover:bg-blue-700 text-xs px-2 py-1 rounded-lg transition font-semibold cursor-pointer flex items-center gap-1 whitespace-nowrap">
+          <span>🔄</span>
+          <span class="hidden sm:inline">Sincronizar</span>
+        </button>
+
+        <!-- Salir -->
+        <button onclick="cerrarSesion()" title="Cerrar Sesión" class="bg-red-600 hover:bg-red-700 text-xs px-2 py-1 rounded-lg font-bold transition cursor-pointer">
+          🚪
+        </button>
       </div>
     </div>
-     
-    <nav class="flex gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 text-xs font-normal w-full md:w-auto">
-      <button onclick="cambiarVista('vender')" id="btnNavVender" class="px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">🛒 Vender</button>
-      <button onclick="cambiarVista('ventas')" id="btnNavVentas" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">🧾 Ventas</button>
-      <button onclick="cambiarVista('cobranza')" id="btnNavCobranza" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap flex items-center gap-1">
-        <span>💰 Cobranza</span>
-        <span id="badgeDeudaNav" class="hidden bg-amber-400 text-slate-900 text-[9px] px-1.5 py-0.2 rounded-full font-black"></span>
-      </button>
-      <button onclick="cambiarVista('historialAbonos')" id="btnNavHistorialAbonos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📚 Abonos</button>
-      <button onclick="cambiarVista('cxp')" id="btnNavCXP" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📉 Cuentas por Pagar</button>
-      <button onclick="cambiarVista('clientes')" id="btnNavClientes" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👥 Clientes</button>
-      <button onclick="cambiarVista('productos')" id="btnNavProductos" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">📦 Productos</button>
-      <button onclick="cambiarVista('usuarios')" id="btnNavUsuarios" class="px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap">👤 Usuarios</button>
-    </nav>
-    
-    <div class="hidden md:flex items-center gap-3">
-      <!-- Tasa BCV -->
-      <div id="tasaBCVHeaderBadge" class="bg-blue-900 border border-blue-400/60 px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-inner" onclick="cambiarTasaBCVManual()">
-        <span class="text-blue-200 font-semibold">Tasa BCV:</span>
-        <span id="tasaBCVHeaderVal" class="font-bold text-amber-300">Bs. 50,00</span>
-      </div>
 
-      <!-- Información del Usuario -->
-      <div id="userInfo" class="text-xs text-right hidden">
-        <div id="userNombre" class="font-bold text-sm"></div>
-        <div id="userRol" class="text-blue-200 uppercase font-semibold text-[10px]"></div>
-      </div>
-
-      <!-- Indicador del estado de Internet -->
-      <div id="badgeEstadoRed" class="bg-emerald-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner">
-        <span id="dotRed" class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-        <span id="txtEstadoRed">Online</span>
-      </div>
-
-      <!-- Botón Sincronizar -->
-      <button onclick="cargarDatos()" class="bg-blue-800 hover:bg-blue-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">🔄 Sincronizar</button>
-      <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg transition font-semibold cursor-pointer">🚪 Salir</button>
+    <!-- FILA SECUNDARIA SOLO EN CELULARES -->
+    <div class="block md:hidden bg-blue-700 border-t border-blue-500/50 px-2 py-1">
+      <nav class="flex gap-1 overflow-x-auto text-xs font-normal max-w-full">
+        <button onclick="cambiarVista('vender')" id="btnNavVenderMovil" class="px-2.5 py-1 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow">🛒 Vender</button>
+        <button onclick="cambiarVista('ventas')" id="btnNavVentasMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">🧾 Ventas</button>
+        <button onclick="cambiarVista('cobranza')" id="btnNavCobranzaMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">💰 Cobranza</button>
+        <button onclick="cambiarVista('historialAbonos')" id="btnNavHistorialAbonosMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">📚 Abonos</button>
+        <button onclick="cambiarVista('cxp')" id="btnNavCXPMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">📉 CXP</button>
+        <button onclick="cambiarVista('clientes')" id="btnNavClientesMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">👥 Clientes</button>
+        <button onclick="cambiarVista('productos')" id="btnNavProductosMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">📦 Productos</button>
+        <button onclick="cambiarVista('usuarios')" id="btnNavUsuariosMovil" class="px-2.5 py-1 rounded-lg bg-blue-800 font-semibold whitespace-nowrap">👤 Usuarios</button>
+      </nav>
     </div>
   </header>
 
@@ -190,12 +219,13 @@
         </div>
 
         <div class="grid grid-cols-2 gap-2">
-          <button onclick="abrirModalCobro()" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer">
-            💵 Contado
+           <button id="btnCobroContado" onclick="abrirModalCobro()" class="bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer">
+           💵 Contado
           </button>
-          <button onclick="procesarPagoCreditoDirecto()" class="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer">
+           <button id="btnCobroCredito" onclick="procesarPagoCreditoDirecto()" class="bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold py-3.5 rounded-xl shadow transition flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer">
             📑 Crédito
-          </button>
+           </button>
+           </div>
         </div>
       </div>
     </div>
@@ -1015,11 +1045,11 @@
     </table>
     <div style="border-bottom: 1px dashed #000; margin: 4px 0;"></div>
     <div style="font-size: 10px; line-height: 1.3;">
-      <div style="display: flex; justify-content: space-between;">
+      <div style="display: flex; justify-between;">
         <span>TOTAL USD:</span>
         <span id="tTktTotalUSD"></span>
       </div>
-      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 11px;">
+      <div style="display: flex; justify-between; font-weight: bold; font-size: 11px;">
         <span>TOTAL BS:</span>
         <span id="tTktTotalBS"></span>
       </div>
@@ -1028,6 +1058,22 @@
     <div style="text-align: center; font-size: 9px; margin-top: 5px;">
       <p style="margin: 1px 0;">¡Gracias por su compra!</p>
       <p style="margin: 1px 0;">iMtec POS - Control de Ventas</p>
+    </div>
+  </div>
+
+  <!-- ETIQUETA DE PRECIO (PARA IMPRIMIR) -->
+  <div id="etiquetaPrecioContainer" class="hidden">
+    <div style="text-align: center; font-family: Arial, sans-serif; border: 2px dashed #000; padding: 10px; border-radius: 5px;">
+      <h2 id="etiqNombre" style="font-size: 16px; font-weight: 900; margin: 0 0 5px 0; text-transform: uppercase;"></h2>
+      <p id="etiqCodigo" style="font-size: 12px; margin: 0 0 10px 0; font-family: monospace;"></p>
+      
+      <!-- Bolívares (Ahora GRANDE) -->
+      <div style="font-size: 26px; font-weight: 900; margin-bottom: 2px;" id="etiqPrecioBS"></div>
+      
+      <!-- Referencia USD (Ahora PEQUEÑA) -->
+      <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #333;" id="etiqPrecioUSD"></div>
+      
+      <p style="font-size: 9px; margin: 0;">Precio sujeto a tasa BCV</p>
     </div>
   </div>
 
@@ -1107,10 +1153,8 @@
     let dbCXP = [];
     let cxpSeleccionada = null;
 
-    // Candado global para evitar disparos dobles en la creación de ventas
     let isProcesandoVenta = false;
 
-    // Normaliza cualquier id de ticket ("#0000001", "0000001", 1) a un string limpio ("1")
     function normalizarTicketId(id) {
       if (!id) return "";
       const clean = id.toString().replace(/\D/g, "");
@@ -1464,7 +1508,6 @@
       return fv.getFullYear() === hoy.getFullYear() && fv.getMonth() === hoy.getMonth() && fv.getDate() === hoy.getDate();
     }
 
-    // Calcula el número correlativo revisando dbVentas Y la cola offline
     function obtenerSiguienteCorrelativo() {
       let maxNum = 0;
       const revisar = (lista) => {
@@ -1582,9 +1625,8 @@
         if (el) el.classList.add('hidden');
       });
 
-      ['btnNavVender', 'btnNavVentas', 'btnNavProductos', 'btnNavClientes', 'btnNavUsuarios', 'btnNavCobranza', 'btnNavHistorialAbonos', 'btnNavCXP'].forEach(id => {
-        const b = document.getElementById(id);
-        if (b) b.className = 'px-3 py-2 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
+      document.querySelectorAll("header nav button").forEach(b => {
+        b.className = 'px-2.5 py-1 rounded-lg bg-blue-700 font-semibold hover:bg-blue-800 whitespace-nowrap';
       });
 
       const vistaMap = {
@@ -1598,22 +1640,26 @@
         cxp: 'vistaCXP'
       };
 
-      const btnMap = {
-        vender: 'btnNavVender', 
-        ventas: 'btnNavVentas', 
-        productos: 'btnNavProductos',
-        clientes: 'btnNavClientes', 
-        usuarios: 'btnNavUsuarios', 
-        cobranza: 'btnNavCobranza',
-        historialAbonos: 'btnNavHistorialAbonos',
-        cxp: 'btnNavCXP'
-      };
-
       if (vistaMap[vista] && document.getElementById(vistaMap[vista])) {
         document.getElementById(vistaMap[vista]).classList.remove('hidden');
       }
-      if (btnMap[vista] && document.getElementById(btnMap[vista])) {
-        document.getElementById(btnMap[vista]).className = 'px-3 py-2 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+
+      const activeSelectors = {
+        vender: ['#btnNavVender', '#btnNavVenderMovil'],
+        ventas: ['#btnNavVentas', '#btnNavVentasMovil'],
+        productos: ['#btnNavProductos', '#btnNavProductosMovil'],
+        clientes: ['#btnNavClientes', '#btnNavClientesMovil'],
+        usuarios: ['#btnNavUsuarios', '#btnNavUsuariosMovil'],
+        cobranza: ['#btnNavCobranza', '#btnNavCobranzaMovil'],
+        historialAbonos: ['#btnNavHistorialAbonos', '#btnNavHistorialAbonosMovil'],
+        cxp: ['#btnNavCXP', '#btnNavCXPMovil']
+      };
+
+      if (activeSelectors[vista]) {
+        activeSelectors[vista].forEach(sel => {
+          const btn = document.querySelector(sel);
+          if (btn) btn.className = 'px-2.5 py-1 rounded-lg bg-blue-900 font-bold whitespace-nowrap shadow';
+        });
       }
 
       if (vista === 'ventas') renderTablasGestionVentas();
@@ -1680,11 +1726,6 @@
       }
     }
 
-    // ==========================================
-    // MÓDULO UNIFICADO DE CONTROL OFFLINE Y SYNC
-    // ==========================================
-
-    // 1. Registrar Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -1693,7 +1734,6 @@
       });
     }
 
-    // 2. Control del estado de la red (Un solo listener)
     window.addEventListener('online', () => {
       actualizarUIConexion(true);
       sincronizarVentasOffline();
@@ -1711,17 +1751,16 @@
       if (!badge) return;
 
       if (online) {
-        badge.className = "bg-emerald-600 text-white text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner";
+        badge.className = "bg-emerald-600 text-white text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner";
         if (txt) txt.innerText = "Online";
-        if (dot) dot.className = "w-2 h-2 rounded-full bg-white animate-pulse";
+        if (dot) dot.className = "w-1.5 h-1.5 rounded-full bg-white animate-pulse";
       } else {
-        badge.className = "bg-amber-500 text-white text-[10px] px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner";
+        badge.className = "bg-amber-500 text-white text-[10px] px-2 py-1 rounded-full font-bold flex items-center gap-1 shadow-inner";
         if (txt) txt.innerText = "Offline";
-        if (dot) dot.className = "w-2 h-2 rounded-full bg-white";
+        if (dot) dot.className = "w-1.5 h-1.5 rounded-full bg-white";
       }
     }
 
-    // 3. Respaldo y carga de copia local
     function respaldarDatosLocalmente() {
       localStorage.setItem('imtec_cache_productos', JSON.stringify(dbProductos));
       localStorage.setItem('imtec_cache_clientes', JSON.stringify(dbClientes));
@@ -1745,22 +1784,19 @@
     }
 
     function actualizarBadgeColaOffline() {
-  const cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
-  const btnSync = document.querySelector("button[onclick='cargarDatos()']");
+      const cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
+      const btnSync = document.getElementById("btnSyncGlobal");
+      if (!btnSync) return;
 
-  if (btnSync) {
-    if (cola.length > 0) {
-      btnSync.innerHTML = `🔄 Sincronizar <span class="bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded-full text-[10px] font-black">${cola.length}</span>`;
-      btnSync.classList.add("animate-pulse", "bg-amber-600");
-    } else {
-      btnSync.innerHTML = `🔄 Sincronizar`;
-      btnSync.classList.remove("animate-pulse", "bg-amber-600");
+      if (cola.length > 0) {
+        btnSync.innerHTML = `<span>🔄</span> <span class="hidden sm:inline">Sincronizar</span> <span class="bg-amber-400 text-slate-900 px-1.5 py-0.2 rounded-full text-[10px] font-black">${cola.length}</span>`;
+        btnSync.classList.add("animate-pulse", "bg-amber-600");
+      } else {
+        btnSync.innerHTML = `<span>🔄</span> <span class="hidden sm:inline">Sincronizar</span>`;
+        btnSync.classList.remove("animate-pulse", "bg-amber-600");
+      }
     }
-  }
-}
 
-
-    // 4. Guardar en cola Offline (con comparación limpia por ID normalizado)
     function guardarVentaEnColaOffline(venta) {
       const cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
       
@@ -1782,65 +1818,61 @@
       }
     }
 
-    // 5. Sincronización segura con Candado e Inspección Normalizada
     let isSyncingOffline = false;
 
-    
     async function sincronizarVentasOffline() {
-  if (!navigator.onLine || isSyncingOffline) return;
+      if (!navigator.onLine || isSyncingOffline) return;
 
-  let cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
-  if (cola.length === 0) {
-    actualizarBadgeColaOffline();
-    return;
-  }
-
-  isSyncingOffline = true;
-  console.log(`📡 Sincronizando ${cola.length} ventas offline...`);
-
-  const colaRestante = [];
-
-  for (const venta of cola) {
-    let idNorm = normalizarTicketId(venta.idVenta);
-
-    // FIX: Si el ticket ya existe en la BD, se le asigna el siguiente disponible para NO PERDER la venta
-    const yaRegistradaEnBD = dbVentas.some(v => normalizarTicketId(v.idVenta) === idNorm);
-    if (yaRegistradaEnBD) {
-      const nuevoTicket = obtenerSiguienteCorrelativo();
-      console.warn(`⚠️ Conflicto con el ticket ${venta.idVenta}. Reasignando a ${nuevoTicket}`);
-      venta.idVenta = nuevoTicket;
-    }
-
-    try {
-      const res = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "registrarVenta", venta })
-      });
-      
-      const data = await res.json();
-      
-      if (data.status === "error") {
-        colaRestante.push(venta);
-      } else {
-        console.log(`✅ Venta ${venta.idVenta} sincronizada con éxito.`);
+      let cola = JSON.parse(localStorage.getItem('imtec_cola_ventas') || '[]');
+      if (cola.length === 0) {
+        actualizarBadgeColaOffline();
+        return;
       }
-    } catch (err) {
-      console.error("Error al enviar venta offline:", err);
-      colaRestante.push(venta);
+
+      isSyncingOffline = true;
+      console.log(`📡 Sincronizando ${cola.length} ventas offline...`);
+
+      const colaRestante = [];
+
+      for (const venta of cola) {
+        let idNorm = normalizarTicketId(venta.idVenta);
+
+        const yaRegistradaEnBD = dbVentas.some(v => normalizarTicketId(v.idVenta) === idNorm);
+        if (yaRegistradaEnBD) {
+          const nuevoTicket = obtenerSiguienteCorrelativo();
+          console.warn(`⚠️ Conflicto con el ticket ${venta.idVenta}. Reasignando a ${nuevoTicket}`);
+          venta.idVenta = nuevoTicket;
+        }
+
+        try {
+          const res = await fetch(SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "registrarVenta", venta })
+          });
+          
+          const data = await res.json();
+          
+          if (data.status === "error") {
+            colaRestante.push(venta);
+          } else {
+            console.log(`✅ Venta ${venta.idVenta} sincronizada con éxito.`);
+          }
+        } catch (err) {
+          console.error("Error al enviar venta offline:", err);
+          colaRestante.push(venta);
+        }
+      }
+
+      localStorage.setItem('imtec_cola_ventas', JSON.stringify(colaRestante));
+      isSyncingOffline = false;
+      actualizarBadgeColaOffline();
+
+      if (colaRestante.length < cola.length) {
+        await cargarDatosPostSincronizacion();
+      }
     }
-  }
 
-  localStorage.setItem('imtec_cola_ventas', JSON.stringify(colaRestante));
-  isSyncingOffline = false;
-  actualizarBadgeColaOffline();
-
-  if (colaRestante.length < cola.length) {
-    await cargarDatosPostSincronizacion();
-  }
-}
-
-    // 6. Recarga limpia tras sincronizar
     async function cargarDatosPostSincronizacion() {
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getDatos`, { method: "GET" });
@@ -1864,7 +1896,6 @@
       }
     }
 
-    // 7. Auxiliar para limpiar el POS tras venta
     function limpiarPantallaPosVenta() {
       carrito = [];
       desseleccionarCliente();
@@ -1957,12 +1988,10 @@
 
     function actualizarBadgeTasaUI() {
       const headerVal = document.getElementById("tasaBCVHeaderVal");
-      const headerValMovil = document.getElementById("tasaBCVHeaderValMovil");
       const formBadge = document.getElementById("badgeTasaFormProd");
       if (headerVal) headerVal.innerText = formatearBS(tasaBCVActual);
-      if (headerValMovil) headerValMovil.innerText = formatearBS(tasaBCVActual);
       if (formBadge) formBadge.innerText = `Tasa: ${formatearBS(tasaBCVActual)}`;
-    }
+    } 
 
     async function cambiarTasaBCVManual() {
       const rol = (usuarioActual?.role || "").toLowerCase().trim();
@@ -2284,30 +2313,29 @@
     }
 
     function agregarAlCarrito(codigo) {
-  const prod = dbProductos.find(p => normalizarTicketId(p.Codigo) === normalizarTicketId(codigo));
-  if (!prod || Number(prod.Stock) <= 0) return alert("Producto sin stock disponible.");
-  
-  const itemIdx = carrito.findIndex(i => normalizarTicketId(i.codigo) === normalizarTicketId(codigo));
-  
-  // CORREGIDO: Se cambia 'p' por 'prod'
-  const precioUSD = Number(prod.PrecioVtaRealDivisas || prod.Precio) || 0;
-  const precioBs = Number(prod.PrecioBs) || (precioUSD * tasaBCVActual);
+      const prod = dbProductos.find(p => normalizarTicketId(p.Codigo) === normalizarTicketId(codigo));
+      if (!prod || Number(prod.Stock) <= 0) return alert("Producto sin stock disponible.");
+      
+      const itemIdx = carrito.findIndex(i => normalizarTicketId(i.codigo) === normalizarTicketId(codigo));
+      
+      const precioUSD = Number(prod.PrecioVtaRealDivisas || prod.Precio) || 0;
+      const precioBs = Number(prod.PrecioBs) || (precioUSD * tasaBCVActual);
 
-  if (itemIdx > -1) {
-    if (carrito[itemIdx].cantidad + 1 > parseFloat(prod.Stock)) return alert(`Stock máximo alcanzado: ${prod.Stock}`);
-    carrito[itemIdx].cantidad += 1;
-  } else {
-    carrito.push({
-      codigo: prod.Codigo,
-      nombre: prod.Nombre,
-      precio: precioUSD,
-      precioBs,
-      cantidad: 1,
-      stockMax: parseFloat(prod.Stock)
-    });
-  }
-  actualizarCarritoUI();
-}
+      if (itemIdx > -1) {
+        if (carrito[itemIdx].cantidad + 1 > parseFloat(prod.Stock)) return alert(`Stock máximo alcanzado: ${prod.Stock}`);
+        carrito[itemIdx].cantidad += 1;
+      } else {
+        carrito.push({
+          codigo: prod.Codigo,
+          nombre: prod.Nombre,
+          precio: precioUSD,
+          precioBs,
+          cantidad: 1,
+          stockMax: parseFloat(prod.Stock)
+        });
+      }
+      actualizarCarritoUI();
+    }
 
     function actualizarCarritoUI() {
       const tbody = document.getElementById("tablaCarrito");
@@ -2386,15 +2414,31 @@
 
     function abrirModalCobro() {
       if (carrito.length === 0) return alert("El carrito está vacío.");
-      const totalUSD = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
-      const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
-      document.getElementById("cobroModalTotalBS").innerText = formatearBS(totalBS);
-      document.getElementById("cobroModalTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
-      pagosCobro = [];
-      document.getElementById("cobroSelectMetodo").value = "Punto de Venta";
-      cambiarMetodoCobroUI();
-      document.getElementById("modalCobroPago").classList.remove("hidden");
-      actualizarCalculosCobro();
+      // 1. Mostrar estado de carga en el botón
+         const btnContado = document.getElementById("btnCobroContado");
+        if (btnContado) {
+           btnContado.disabled = true;
+           btnContado.innerHTML = "⏳ Procesando...";
+        }
+       
+      // 2. Retraso visual breve (200 milisegundos) para que el usuario vea la animación
+  setTimeout(() => {
+    const totalUSD = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+    const totalBS = carrito.reduce((acc, i) => acc + (i.precioBs * i.cantidad), 0);
+    document.getElementById("cobroModalTotalBS").innerText = formatearBS(totalBS);
+    document.getElementById("cobroModalTotalUSD").innerText = `$${totalUSD.toFixed(2)}`;
+    pagosCobro = [];
+    document.getElementById("cobroSelectMetodo").value = "Punto de Venta";
+    cambiarMetodoCobroUI();
+    document.getElementById("modalCobroPago").classList.remove("hidden");
+    actualizarCalculosCobro();
+
+    // 3. Restaurar el botón original una vez se abra el modal
+    if (btnContado) {
+      btnContado.disabled = false;
+      btnContado.innerHTML = "💵 Contado";
+    }
+  }, 200);
     }
 
     function cerrarModalCobro() {
@@ -2575,6 +2619,12 @@
       if (!clienteSeleccionadoVenta || !clienteSeleccionadoVenta.ID) return alert("⚠️ Debes seleccionar un cliente para venta a CRÉDITO.");
 
       isProcesandoVenta = true;
+      // 1. Mostrar mensaje de "Procesando..."
+  const btnCredito = document.getElementById("btnCobroCredito");
+  if (btnCredito) {
+    btnCredito.disabled = true;
+    btnCredito.innerHTML = "⏳ Procesando...";
+  }
 
       try {
         const totalUSD = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
@@ -2663,6 +2713,27 @@
       imprimirTicket(venta);
     }
 
+    function imprimirEtiquetaPrecio(codigo) {
+      // Buscar el producto en la base de datos local
+      const p = dbProductos.find(item => normalizarTicketId(item.Codigo) === normalizarTicketId(codigo));
+      if (!p) return alert("Producto no encontrado.");
+
+      // Obtener precios actualizados
+      const precioUSD = Number(p.PrecioVtaRealDivisas || p.Precio) || 0;
+      const precioBs = Number(p.PrecioBs) || (precioUSD * tasaBCVActual);
+
+      // Inyectar datos en la etiqueta HTML
+      document.getElementById("etiqNombre").innerText = p.Nombre;
+      document.getElementById("etiqCodigo").innerText = "CÓD: " + p.Codigo;
+      document.getElementById("etiqPrecioUSD").innerText = "REF: $" + precioUSD.toFixed(2);
+      document.getElementById("etiqPrecioBS").innerText = formatearBS(precioBs);
+
+      // Mostrar el contenedor, abrir ventana de impresión y volver a ocultarlo
+      const container = document.getElementById("etiquetaPrecioContainer");
+      container.classList.remove("hidden");
+      window.print();
+      container.classList.add("hidden");
+    }
     function renderTablasGestionVentas() {
       const tbody = document.getElementById("tablaVentasBody");
       if (!tbody) return;
@@ -3124,8 +3195,9 @@
             <div class="font-bold text-emerald-700 text-xs mt-0.5">$${Number(p.PrecioVtaRealDivisas || p.Precio).toFixed(2)} (${formatearBS(p.PrecioBs)})</div>
           </div>
           <div class="flex gap-1">
-            <button onclick="prepararEdicionProd('${p.Codigo}')" class="bg-amber-500 text-white px-2 py-1 rounded-lg cursor-pointer">✏️</button>
-            <button onclick="eliminarProducto('${p.Codigo}')" class="bg-red-600 text-white px-2 py-1 rounded-lg cursor-pointer">🗑️</button>
+            <button onclick="imprimirEtiquetaPrecio('${p.Codigo}')" title="Imprimir Precio" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-lg cursor-pointer transition">🖨️</button>
+            <button onclick="prepararEdicionProd('${p.Codigo}')" title="Editar Producto" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg cursor-pointer transition">✏️</button>
+            <button onclick="eliminarProducto('${p.Codigo}')" title="Eliminar Producto" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg cursor-pointer transition">🗑️</button>
           </div>
         </div>
       `).join('');
