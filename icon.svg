@@ -1,72 +1,63 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f766e" />
-      <stop offset="50%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#0284c7" />
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1d4ed8" />
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f0fdf4" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fbbf24" />
       <stop offset="100%" stop-color="#f59e0b" />
     </linearGradient>
     <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.25" />
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.18" />
     </filter>
   </defs>
 
-  <!-- Background rounded squircle -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- Background with rounded squircles -->
+  <rect width="512" height="512" rx="112" fill="url(#blueGrad)" />
 
-  <!-- Inner subtle border -->
-  <rect x="12" y="12" width="488" height="488" rx="100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="4" />
+  <!-- Inner subtle border glow -->
+  <rect x="12" y="12" width="488" height="488" rx="102" fill="none" stroke="#60a5fa" stroke-width="4" stroke-opacity="0.35" />
 
-  <!-- POS Terminal Body -->
+  <!-- POS Terminal & Shopping Icon Group -->
   <g filter="url(#dropShadow)">
-    <!-- Terminal base -->
-    <path d="M 120 180 L 392 180 L 416 410 C 416 424 404 436 390 436 L 122 436 C 108 436 96 424 96 410 Z" fill="#ffffff" />
-    
-    <!-- Screen area -->
-    <rect x="126" y="196" width="260" height="130" rx="16" fill="#0f172a" />
-    
-    <!-- Screen content -->
-    <rect x="144" y="214" width="70" height="12" rx="4" fill="#38bdf8" />
-    <rect x="144" y="234" width="140" height="10" rx="3" fill="#64748b" />
-    <text x="368" y="246" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="900" font-size="22" fill="#34d399">$120.00</text>
-    <text x="368" y="272" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="700" font-size="14" fill="#fcd34d">Bs 7,850</text>
+    <!-- POS Terminal Screen Body -->
+    <rect x="116" y="104" width="280" height="240" rx="28" fill="#ffffff" />
+    <rect x="136" y="124" width="240" height="130" rx="16" fill="#eff6ff" />
 
-    <line x1="144" y1="292" x2="368" y2="292" stroke="#334155" stroke-width="2" stroke-dasharray="4 4" />
-    <circle cx="156" cy="308" r="6" fill="#10b981" />
-    <text x="170" y="312" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="800" font-size="11" fill="#94a3b8">iMtec POS Pro</text>
+    <!-- Screen Graphics: Cart + Wave -->
+    <path d="M176 160 h24 l18 48 h60 l14 -32 h-76" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="218" cy="226" r="8" fill="#2563eb" />
+    <circle cx="268" cy="226" r="8" fill="#2563eb" />
 
-    <!-- Keypad / Card Slot section -->
-    <rect x="126" y="340" width="160" height="74" rx="12" fill="#f1f5f9" />
-    <!-- 9 buttons grid -->
-    <circle cx="152" cy="358" r="8" fill="#cbd5e1" />
-    <circle cx="186" cy="358" r="8" fill="#cbd5e1" />
-    <circle cx="220" cy="358" r="8" fill="#cbd5e1" />
-    <circle cx="254" cy="358" r="8" fill="#3b82f6" />
+    <!-- Screen Dollar Badge -->
+    <circle cx="316" cy="156" r="22" fill="url(#amberGrad)" />
+    <text x="316" y="165" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="900" fill="#ffffff" text-anchor="middle">$</text>
 
-    <circle cx="152" cy="382" r="8" fill="#cbd5e1" />
-    <circle cx="186" cy="382" r="8" fill="#cbd5e1" />
-    <circle cx="220" cy="382" r="8" fill="#cbd5e1" />
-    <circle cx="254" cy="382" r="8" fill="#10b981" />
+    <!-- Keypad Dots -->
+    <circle cx="180" cy="290" r="10" fill="#93c5fd" />
+    <circle cx="220" cy="290" r="10" fill="#93c5fd" />
+    <circle cx="260" cy="290" r="10" fill="#93c5fd" />
+    <circle cx="300" cy="290" r="10" fill="#3b82f6" />
+    <circle cx="334" cy="290" r="10" fill="#10b981" />
 
-    <circle cx="152" cy="404" r="6" fill="#94a3b8" />
-    <circle cx="186" cy="404" r="6" fill="#94a3b8" />
-    <circle cx="220" cy="404" r="6" fill="#94a3b8" />
+    <!-- Stand / Base of the Register -->
+    <path d="M206 344 L180 398 H332 L306 344 Z" fill="#dbeafe" />
+    <rect x="146" y="398" width="220" height="20" rx="10" fill="#ffffff" />
 
-    <!-- Credit card chip / slot -->
-    <rect x="306" y="340" width="80" height="74" rx="12" fill="#0284c7" />
-    <rect x="320" y="356" width="52" height="34" rx="6" fill="url(#accentGrad)" />
-    <rect x="326" y="366" width="16" height="12" rx="2" fill="#b45309" opacity="0.6" />
-    <circle cx="356" cy="373" r="6" fill="#ef4444" opacity="0.8" />
-    <circle cx="362" cy="373" r="6" fill="#f59e0b" opacity="0.8" />
+    <!-- Receipt paper emitting from top -->
+    <path d="M210 104 V78 H302 V104 Z" fill="#f8fafc" />
+    <line x1="226" y1="88" x2="286" y2="88" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round" />
+    <line x1="226" y1="96" x2="266" y2="96" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round" />
+  </g>
 
-    <!-- Paper Receipt coming out top -->
-    <path d="M 180 180 L 180 96 L 202 108 L 224 96 L 246 108 L 268 96 L 290 108 L 312 96 L 332 108 L 332 180 Z" fill="#ffffff" />
-    <line x1="200" y1="126" x2="312" y2="126" stroke="#059669" stroke-width="4" stroke-linecap="round" />
-    <line x1="200" y1="140" x2="280" y2="140" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
-    <line x1="200" y1="154" x2="300" y2="154" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
-    <line x1="200" y1="168" x2="260" y2="168" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" />
+  <!-- App Branding Pill at Bottom -->
+  <g transform="translate(156, 434)">
+    <rect width="200" height="42" rx="21" fill="#1e40af" />
+    <text x="100" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="900" fill="#ffffff" letter-spacing="1.5" text-anchor="middle">iMtec POS</text>
   </g>
 </svg>
